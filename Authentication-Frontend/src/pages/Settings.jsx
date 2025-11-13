@@ -1,9 +1,15 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 export default function Settings() {
+  const { user } = useAuth();
+  const [success, setSuccess] = useState("");
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    setSuccess("Settings saved successfully!");
+    setTimeout(() => setSuccess(""), 3000);
   };
 
   return (
@@ -14,13 +20,21 @@ export default function Settings() {
         </h2>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          {success && (
+            <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-lg text-xs">
+              {success}
+            </div>
+          )}
+
           <input
             type="text"
+            defaultValue={user?.username || ""}
             placeholder="Full Name"
             className="border border-gray-300 rounded-full px-4 h-10 text-sm focus:ring-2 focus:ring-indigo-400 outline-none"
           />
           <input
             type="email"
+            defaultValue={user?.email || ""}
             placeholder="Email"
             className="border border-gray-300 rounded-full px-4 h-10 text-sm focus:ring-2 focus:ring-indigo-400 outline-none"
           />

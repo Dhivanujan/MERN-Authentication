@@ -1,9 +1,56 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 export default function Register() {
-  const handleSubmit = (e) => {
+  const navigate = useNavigate();
+  const { register } = useAuth();
+  const [formData, setFormData] = useState({
+    username: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState("");
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormError("");
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setFormError("");
+
+    try {
+      if (!formData.username || !formData.email || !formData.password) {
+        setFormError("All fields are required");
+        setLoading(false);
+        return;
+      }
+
+      if (formData.password !== formData.confirmPassword) {
+        setFormError("Passwords do not match");
+        setLoading(false);
+        return;
+      }
+
+      if (formData.password.length < 6) {
+        setFormError("Password must be at least 6 characters");
+        setLoading(false);
+        return;
+      }
+
+      await register(formData.username, formData.email, formData.password);
+      navigate("/dashboard");
+    } catch (err) {
+      setFormError(err.message || "Registration failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -17,24 +64,11 @@ export default function Register() {
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          {/* Google Sign-Up */}
-          <button
-            type="button"
-            className="w-full bg-gray-100 hover:bg-gray-200 transition flex items-center justify-center h-10 rounded-full shadow-sm"
-          >
-            <img
-              src="https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/login/googleLogo.svg"
-              alt="Sign up with Google"
-              className="h-4"
-            />
-          </button>
-
-          {/* Divider */}
-          <div className="flex items-center my-2">
-            <div className="flex-grow h-px bg-gray-300"></div>
-            <span className="px-2 text-[11px] text-gray-400">or</span>
-            <div className="flex-grow h-px bg-gray-300"></div>
-          </div>
+          {formError && (
+            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-xs">
+              {formError}
+            </div>
+          )}
 
           {/* Full Name */}
           <div className="flex items-center border border-gray-300 rounded-full px-4 h-10 gap-2 focus-within:ring-2 focus-within:ring-indigo-400 transition">
@@ -44,7 +78,10 @@ export default function Register() {
             </svg>
             <input
               type="text"
+              name="username"
               placeholder="Full Name"
+              value={formData.username}
+              onChange={handleChange}
               className="bg-transparent text-gray-700 placeholder-gray-500 outline-none text-sm w-full"
               required
             />
@@ -60,7 +97,10 @@ export default function Register() {
             </svg>
             <input
               type="email"
+              name="email"
               placeholder="Email"
+              value={formData.email}
+              onChange={handleChange}
               className="bg-transparent text-gray-700 placeholder-gray-500 outline-none text-sm w-full"
               required
             />
@@ -76,7 +116,10 @@ export default function Register() {
             </svg>
             <input
               type="password"
+              name="password"
               placeholder="Password"
+              value={formData.password}
+              onChange={handleChange}
               className="bg-transparent text-gray-700 placeholder-gray-500 outline-none text-sm w-full"
               required
             />
@@ -92,7 +135,10 @@ export default function Register() {
             </svg>
             <input
               type="password"
+              name="confirmPassword"
               placeholder="Confirm Password"
+              value={formData.confirmPassword}
+              onChange={handleChange}
               className="bg-transparent text-gray-700 placeholder-gray-500 outline-none text-sm w-full"
               required
             />
@@ -101,9 +147,10 @@ export default function Register() {
           {/* Submit Button */}
           <button
             type="submit"
-            className="mt-3 w-full h-10 rounded-full text-white bg-indigo-500 hover:bg-indigo-600 transition font-medium text-sm"
+            disabled={loading}
+            className="mt-3 w-full h-10 rounded-full text-white bg-indigo-500 hover:bg-indigo-600 disabled:bg-gray-400 transition font-medium text-sm"
           >
-            Register
+            {loading ? "Creating account..." : "Register"}
           </button>
 
           {/* Login Redirect */}

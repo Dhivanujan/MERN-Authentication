@@ -1,16 +1,33 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 export default function Dashboard() {
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
       <header className="bg-white shadow-md py-4 px-6 flex justify-between items-center">
-        <h1 className="text-xl font-semibold text-gray-800">Dashboard</h1>
-        <nav className="flex gap-4 text-sm text-gray-600">
-          <Link to="/profile" className="hover:text-indigo-500">Profile</Link>
-          <Link to="/settings" className="hover:text-indigo-500">Settings</Link>
-          <Link to="/" className="text-red-500 hover:underline">Logout</Link>
+        <div>
+          <h1 className="text-xl font-semibold text-gray-800">Dashboard</h1>
+          {user && <p className="text-xs text-gray-500">Welcome, {user.username}!</p>}
+        </div>
+        <nav className="flex gap-4 text-sm">
+          <Link to="/profile" className="text-gray-600 hover:text-indigo-500">Profile</Link>
+          <Link to="/settings" className="text-gray-600 hover:text-indigo-500">Settings</Link>
+          <button
+            onClick={handleLogout}
+            className="text-red-500 hover:underline bg-none border-none cursor-pointer"
+          >
+            Logout
+          </button>
         </nav>
       </header>
 

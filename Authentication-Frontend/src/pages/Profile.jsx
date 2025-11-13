@@ -1,7 +1,10 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 export default function Profile() {
+  const { user } = useAuth();
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center py-10 px-4">
       <div className="bg-white shadow-xl rounded-2xl p-8 w-full sm:w-[400px]">
@@ -14,8 +17,8 @@ export default function Profile() {
             alt="User Avatar"
             className="w-20 h-20 rounded-full border-4 border-indigo-500"
           />
-          <p className="text-lg font-medium text-gray-800">Dhivanujan Nesiah</p>
-          <p className="text-sm text-gray-500">dhivanujan@example.com</p>
+          <p className="text-lg font-medium text-gray-800">{user?.username || "User"}</p>
+          <p className="text-sm text-gray-500">{user?.email || "email@example.com"}</p>
         </div>
 
         <div className="mt-6 text-center">
