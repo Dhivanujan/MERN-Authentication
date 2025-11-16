@@ -65,6 +65,26 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('user');
   };
 
+  const updateProfilePhoto = async (profilePhoto) => {
+    try {
+      setError(null);
+      const response = await authAPI.updateProfilePhoto({
+        userId: user._id,
+        profilePhoto,
+      });
+      
+      const updatedUser = { ...user, profilePhoto: response.data.profilePhoto };
+      setUser(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      
+      return response.data;
+    } catch (err) {
+      const message = err.response?.data?.message || 'Failed to update profile photo';
+      setError(message);
+      throw new Error(message);
+    }
+  };
+
   const value = {
     user,
     token,
@@ -73,6 +93,7 @@ export const AuthProvider = ({ children }) => {
     register,
     login,
     logout,
+    updateProfilePhoto,
     isAuthenticated: !!token,
   };
 

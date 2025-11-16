@@ -36,6 +36,7 @@ export const register = async (req, res) => {
         _id: user._id,
         username: user.username,
         email: user.email,
+        profilePhoto: user.profilePhoto,
         token: generateToken(user._id),
       });
     }
@@ -73,11 +74,45 @@ export const login = async (req, res) => {
       _id: user._id,
       username: user.username,
       email: user.email,
+      profilePhoto: user.profilePhoto,
       token: generateToken(user._id),
     });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ message: 'Server error during login' });
+  }
+};
+
+// @desc    Update user profile photo
+// @route   PUT /api/auth/profile-photo
+// @access  Private
+export const updateProfilePhoto = async (req, res) => {
+  try {
+    const { userId, profilePhoto } = req.body;
+
+    if (!userId || !profilePhoto) {
+      return res.status(400).json({ message: 'User ID and profile photo are required' });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { profilePhoto },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({
+      _id: user._id,
+      username: user.username,
+      email: user.email,
+      profilePhoto: user.profilePhoto,
+    });
+  } catch (error) {
+    console.error('Update profile photo error:', error);
+    res.status(500).json({ message: 'Server error updating profile photo' });
   }
 };
 

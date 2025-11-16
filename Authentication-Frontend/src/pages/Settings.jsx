@@ -3,14 +3,47 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export default function Settings() {
-  const { user } = useAuth();
+  const { user, updateProfilePhoto } = useAuth();
   const [success, setSuccess] = useState("");
+  const [photoPreview, setPhotoPreview] = useState(user?.profilePhoto);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setLoading(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      // Convert file to base64
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64 = reader.result;
+        setPhotoPreview(base64);
+        
+        // Update profile photo in backend
+        await updateProfilePhoto(base64);
+        setSuccess("Profile photo updated successfully!");
+        setTimeout(() => setSuccess(""), 3000);
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      setError(err.message || "Failed to update profile photo");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     setSuccess("Settings saved successfully!");
     setTimeout(() => setSuccess(""), 3000);
   };
+
+  const defaultAvatar = `https://i.pravatar.cc/100?u=${user?.email}`;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center py-10 px-4">
@@ -20,11 +53,37 @@ export default function Settings() {
         </h2>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          {error && (
+            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-xs">
+              {error}
+            </div>
+          )}
+
           {success && (
             <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-lg text-xs">
               {success}
             </div>
           )}
+
+          {/* Profile Photo Section */}
+          <div className="flex flex-col items-center gap-3 pb-4 border-b border-gray-200">
+            <p className="text-sm font-medium text-gray-700">Profile Photo</p>
+            <img
+              src={photoPreview || defaultAvatar}
+              alt="User Avatar"
+              className="w-20 h-20 rounded-full border-4 border-indigo-500 object-cover"
+            />
+            <label className="bg-indigo-500 text-white px-4 py-2 rounded-full hover:bg-indigo-600 transition text-xs font-medium cursor-pointer">
+              Change Photo
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoUpload}
+                disabled={loading}
+                className="hidden"
+              />
+            </label>
+          </div>
 
           <input
             type="text"

@@ -24,6 +24,7 @@ api.interceptors.request.use(
 export const authAPI = {
   register: (userData) => api.post('/auth/register', userData),
   login: (credentials) => api.post('/auth/login', credentials),
+  updateProfilePhoto: (photoData) => api.put('/auth/profile-photo', photoData),
 };
 
 export default api;
