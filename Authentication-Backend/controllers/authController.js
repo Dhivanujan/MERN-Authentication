@@ -160,3 +160,51 @@ export const getMe = async (req, res) => {
     return res.status(500).json({ message: 'Server error fetching user' });
   }
 };
+
+export const updateAccount = async (req, res) => {
+  try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: 'Not authorized' });
+    }
+
+    const { username, email, password } = req.body;
+    const updates = {};
+
+    if (username) updates.username = username.trim();
+    if (email) updates.email = email.trim();
+
+    if (password) {
+      if (password.length < 6) {
+        return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+      }
+      const salt = await bcrypt.genSalt(10);
+      updates.password = await bcrypt.hash(password, salt);
+    }
+
+    if (!Object.keys(updates).length) {
+      return res.status(400).json({ message: 'No updates were provided' });
+    }
+
+    const user = await User.findByIdAndUpdate(req.user.id, updates, { new: true });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    return res.json({
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        profilePhoto: user.profilePhoto,
+      },
+    });
+  } catch (error) {
+    console.error('Update account error:', error);
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyValue || {})[0];
+      return res.status(400).json({ message: `${field} is already in use` });
+    }
+    return res.status(500).json({ message: 'Server error updating account' });
+  }
+};

@@ -1,13 +1,27 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export default function Settings() {
-  const { user, updateProfilePhoto } = useAuth();
+  const { user, updateProfilePhoto, updateAccount } = useAuth();
   const [success, setSuccess] = useState("");
   const [photoPreview, setPhotoPreview] = useState(user?.profilePhoto);
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [formData, setFormData] = useState({
+    username: user?.username || "",
+    email: user?.email || "",
+    password: "",
+  });
+
+  useEffect(() => {
+    setFormData((prev) => ({
+      ...prev,
+      username: user?.username || "",
+      email: user?.email || "",
+    }));
+  }, [user]);
 
   const handlePhotoUpload = async (e) => {
     const file = e.target.files[0];
@@ -37,10 +51,46 @@ export default function Settings() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    setError("");
+    setSuccess("");
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSuccess("Settings saved successfully!");
-    setTimeout(() => setSuccess(""), 3000);
+    setSaving(true);
+    setError("");
+    setSuccess("");
+
+    const trimmedUsername = formData.username.trim();
+    const trimmedEmail = formData.email.trim();
+
+    if (!trimmedUsername || !trimmedEmail) {
+      setError("Name and email cannot be empty");
+      setSaving(false);
+      return;
+    }
+
+    try {
+      const payload = {
+        username: trimmedUsername,
+        email: trimmedEmail,
+      };
+
+      if (formData.password) {
+        payload.password = formData.password;
+      }
+
+      await updateAccount(payload);
+      setSuccess("Settings saved successfully!");
+      setFormData((prev) => ({ ...prev, password: "" }));
+    } catch (err) {
+      setError(err.message || "Unable to save settings");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const defaultAvatar = `https://i.pravatar.cc/100?u=${user?.email}`;
@@ -78,7 +128,7 @@ export default function Settings() {
               className="w-20 h-20 rounded-full border-4 border-indigo-400 object-cover shadow-lg shadow-slate-950/70"
             />
             <label className="primary-btn px-4 py-2 text-xs font-medium cursor-pointer h-auto">
-              Change photo
+              {loading ? 'Uploading …' : 'Change photo'}
               <input
                 type="file"
                 accept="image/*"
@@ -91,18 +141,25 @@ export default function Settings() {
 
           <input
             type="text"
-            defaultValue={user?.username || ""}
+            name="username"
+            value={formData.username}
+            onChange={handleInputChange}
             placeholder="Full name"
             className="subtle-input"
           />
           <input
             type="email"
-            defaultValue={user?.email || ""}
+            name="email"
+            value={formData.email}
+            onChange={handleInputChange}
             placeholder="Email"
             className="subtle-input"
           />
           <input
             type="password"
+            name="password"
+            value={formData.password}
+            onChange={handleInputChange}
             placeholder="New password (optional)"
             className="subtle-input"
           />
@@ -110,8 +167,9 @@ export default function Settings() {
           <button
             type="submit"
             className="primary-btn w-full h-10 mt-1"
+            disabled={saving}
           >
-            Save changes
+            {saving ? "Saving changes..." : "Save changes"}
           </button>
         </form>
 

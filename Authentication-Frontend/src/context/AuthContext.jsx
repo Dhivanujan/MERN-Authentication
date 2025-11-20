@@ -107,6 +107,27 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const updateAccount = async ({ username, email, password }) => {
+    try {
+      setError(null);
+      const payload = {};
+      if (username !== undefined) payload.username = username.trim();
+      if (email !== undefined) payload.email = email.trim();
+      if (password) payload.password = password;
+
+      const response = await authAPI.updateAccount(payload);
+      const updatedUser = response.data.user;
+      setUser(updatedUser);
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(updatedUser));
+
+      return updatedUser;
+    } catch (err) {
+      const message = err.response?.data?.message || 'Failed to update account';
+      setError(message);
+      throw new Error(message);
+    }
+  };
+
   const value = {
     user,
     token,
@@ -116,6 +137,7 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     updateProfilePhoto,
+    updateAccount,
     isAuthenticated: !!token,
   };
 
