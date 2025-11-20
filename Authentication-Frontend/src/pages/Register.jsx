@@ -54,24 +54,30 @@ export default function Register() {
   };
 
   return (
-    <div className="flex items-center justify-center h-screen bg-gray-50">
-      <div className="bg-white shadow-2xl rounded-2xl px-8 py-8 w-[90%] sm:w-[350px]">
-        <div className="text-center mb-5">
-          <h2 className="text-2xl font-semibold text-gray-900">Create Account</h2>
-          <p className="text-xs text-gray-500 mt-2">
-            Join us today! Fill in your details to sign up
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center px-4">
+      <div className="absolute inset-0 -z-10 opacity-40 bg-[radial-gradient(circle_at_top,_#4f46e5_0,_transparent_55%),_radial-gradient(circle_at_bottom,_#22d3ee_0,_transparent_55%)]" />
+
+      <div className="glass-card rounded-3xl px-8 py-8 w-full max-w-sm relative overflow-hidden">
+        <div className="absolute -top-16 -right-10 h-32 w-32 rounded-full bg-indigo-500/30 blur-3xl" />
+        <div className="absolute -bottom-16 -left-10 h-32 w-32 rounded-full bg-cyan-400/20 blur-3xl" />
+
+        <div className="relative text-center mb-6">
+          <p className="text-[10px] uppercase tracking-[0.25em] text-slate-400 mb-2">Get started</p>
+          <h2 className="text-2xl font-semibold text-slate-50">Create your account</h2>
+          <p className="text-xs text-slate-400 mt-2">
+            Join the dashboard and manage your profile securely
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+        <form onSubmit={handleSubmit} className="relative flex flex-col gap-3">
           {formError && (
-            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-xs">
+            <div className="mb-2 p-3 bg-red-500/10 border border-red-500/60 text-red-200 rounded-xl text-xs backdrop-blur">
               {formError}
             </div>
           )}
 
           {/* Full Name */}
-          <div className="flex items-center border border-gray-300 rounded-full px-4 h-10 gap-2 focus-within:ring-2 focus-within:ring-indigo-400 transition">
+          <div className="flex items-center gap-2">
             <svg width="16" height="16" fill="currentColor" className="text-gray-500" viewBox="0 0 16 16">
               <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
               <path fillRule="evenodd" d="M14 14s-1-4-6-4-6 4-6 4 2 2 6 2 6-2 6-2z"/>
@@ -79,16 +85,16 @@ export default function Register() {
             <input
               type="text"
               name="username"
-              placeholder="Full Name"
+              placeholder="Full name"
               value={formData.username}
               onChange={handleChange}
-              className="bg-transparent text-gray-700 placeholder-gray-500 outline-none text-sm w-full"
+              className="subtle-input"
               required
             />
           </div>
 
           {/* Email */}
-          <div className="flex items-center border border-gray-300 rounded-full px-4 h-10 gap-2 focus-within:ring-2 focus-within:ring-indigo-400 transition">
+          <div className="flex items-center gap-2">
             <svg width="15" height="10" viewBox="0 0 16 11" className="text-gray-500">
               <path
                 fill="currentColor"
@@ -98,16 +104,16 @@ export default function Register() {
             <input
               type="email"
               name="email"
-              placeholder="Email"
+              placeholder="Work email"
               value={formData.email}
               onChange={handleChange}
-              className="bg-transparent text-gray-700 placeholder-gray-500 outline-none text-sm w-full"
+              className="subtle-input"
               required
             />
           </div>
 
           {/* Password */}
-          <div className="flex items-center border border-gray-300 rounded-full px-4 h-10 gap-2 focus-within:ring-2 focus-within:ring-indigo-400 transition">
+          <div className="flex items-center gap-2">
             <svg width="12" height="15" viewBox="0 0 13 17" className="text-gray-500">
               <path
                 fill="currentColor"
@@ -117,16 +123,16 @@ export default function Register() {
             <input
               type="password"
               name="password"
-              placeholder="Password"
+              placeholder="Password (min. 6 characters)"
               value={formData.password}
               onChange={handleChange}
-              className="bg-transparent text-gray-700 placeholder-gray-500 outline-none text-sm w-full"
+              className="subtle-input"
               required
             />
           </div>
 
           {/* Confirm Password */}
-          <div className="flex items-center border border-gray-300 rounded-full px-4 h-10 gap-2 focus-within:ring-2 focus-within:ring-indigo-400 transition">
+          <div className="flex items-center gap-2">
             <svg width="12" height="15" viewBox="0 0 13 17" className="text-gray-500">
               <path
                 fill="currentColor"
@@ -136,10 +142,10 @@ export default function Register() {
             <input
               type="password"
               name="confirmPassword"
-              placeholder="Confirm Password"
+              placeholder="Confirm password"
               value={formData.confirmPassword}
               onChange={handleChange}
-              className="bg-transparent text-gray-700 placeholder-gray-500 outline-none text-sm w-full"
+              className="subtle-input"
               required
             />
           </div>
@@ -148,16 +154,16 @@ export default function Register() {
           <button
             type="submit"
             disabled={loading}
-            className="mt-3 w-full h-10 rounded-full text-white bg-indigo-500 hover:bg-indigo-600 disabled:bg-gray-400 transition font-medium text-sm"
+            className="mt-3 w-full primary-btn h-10"
           >
-            {loading ? "Creating account..." : "Register"}
+            {loading ? "Creating account..." : "Create account"}
           </button>
 
           {/* Login Redirect */}
-          <p className="text-gray-500 text-xs text-center mt-3">
+          <p className="text-slate-400 text-[11px] text-center mt-3">
             Already have an account?{" "}
-            <Link to="/" className="text-indigo-500 hover:underline">
-              Login
+            <Link to="/" className="text-indigo-300 hover:text-indigo-200 hover:underline">
+              Sign in
             </Link>
           </p>
         </form>

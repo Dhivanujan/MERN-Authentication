@@ -2,6 +2,11 @@ import User from '../models/User.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.warn('⚠️  JWT_SECRET is not set. Tokens will not be issued.');
+}
+
 // @desc    Register a new user
 // @route   POST /api/auth/register
 // @access  Public
@@ -9,9 +14,13 @@ export const register = async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
-    // Validate input
+    // Basic validation
     if (!username || !email || !password) {
       return res.status(400).json({ message: 'Username, email, and password are required' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters long' });
     }
 
     // Check if user already exists
@@ -32,11 +41,13 @@ export const register = async (req, res) => {
     });
 
     if (user) {
-      res.status(201).json({
-        _id: user._id,
-        username: user.username,
-        email: user.email,
-        profilePhoto: user.profilePhoto,
+      return res.status(201).json({
+        user: {
+          _id: user._id,
+          username: user.username,
+          email: user.email,
+          profilePhoto: user.profilePhoto,
+        },
         token: generateToken(user._id),
       });
     }
@@ -70,11 +81,13 @@ export const login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    res.json({
-      _id: user._id,
-      username: user.username,
-      email: user.email,
-      profilePhoto: user.profilePhoto,
+    return res.json({
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        profilePhoto: user.profilePhoto,
+      },
       token: generateToken(user._id),
     });
   } catch (error) {
@@ -88,14 +101,18 @@ export const login = async (req, res) => {
 // @access  Private
 export const updateProfilePhoto = async (req, res) => {
   try {
-    const { userId, profilePhoto } = req.body;
+    const { profilePhoto } = req.body;
 
-    if (!userId || !profilePhoto) {
-      return res.status(400).json({ message: 'User ID and profile photo are required' });
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: 'Not authorized' });
+    }
+
+    if (!profilePhoto) {
+      return res.status(400).json({ message: 'Profile photo is required' });
     }
 
     const user = await User.findByIdAndUpdate(
-      userId,
+      req.user.id,
       { profilePhoto },
       { new: true }
     );
@@ -104,11 +121,13 @@ export const updateProfilePhoto = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    res.json({
-      _id: user._id,
-      username: user.username,
-      email: user.email,
-      profilePhoto: user.profilePhoto,
+    return res.json({
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        profilePhoto: user.profilePhoto,
+      },
     });
   } catch (error) {
     console.error('Update profile photo error:', error);
@@ -118,7 +137,26 @@ export const updateProfilePhoto = async (req, res) => {
 
 // Generate JWT
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: '30d',
+  if (!JWT_SECRET) return null;
+  return jwt.sign({ id }, JWT_SECRET, {
+    expiresIn: '7d',
   });
+};
+
+export const getMe = async (req, res) => {
+  try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: 'Not authorized' });
+    }
+
+    const user = await User.findById(req.user.id).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    return res.json({ user });
+  } catch (error) {
+    console.error('Get current user error:', error);
+    return res.status(500).json({ message: 'Server error fetching user' });
+  }
 };
