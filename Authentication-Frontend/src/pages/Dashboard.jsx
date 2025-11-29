@@ -5,6 +5,12 @@ import { useAuth } from "../context/AuthContext";
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const lastLogin = user?.lastLogin
+    ? new Date(user.lastLogin).toLocaleString(undefined, {
+        dateStyle: "medium",
+        timeStyle: "short",
+      })
+    : "No activity recorded";
 
   const handleLogout = () => {
     logout();
@@ -62,47 +68,43 @@ export default function Dashboard() {
           </div>
 
           <div className="grid sm:grid-cols-3 gap-5 w-full">
-            <div className="glass-card rounded-2xl p-5 hover:translate-y-0.5 hover:shadow-2xl transition-transform">
+            <Link to="/profile" className="glass-card rounded-2xl p-5 hover:-translate-y-1 hover:shadow-2xl hover:border-indigo-500/30 transition-all group cursor-pointer">
               <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400 mb-3">
                 Account
               </p>
-              <h3 className="font-medium text-slate-50 mb-1">Profile</h3>
+              <h3 className="font-medium text-slate-50 mb-1 group-hover:text-indigo-300 transition-colors">Profile</h3>
               <p className="text-slate-400 text-xs">
                 View and update your avatar, name and contact details.
               </p>
-              <Link
-                to="/profile"
-                className="mt-4 inline-flex text-[12px] text-indigo-300 hover:text-indigo-200"
-              >
+              <span className="mt-4 inline-flex text-[12px] text-indigo-300 group-hover:text-indigo-200">
                 Open profile →
-              </Link>
-            </div>
-            <div className="glass-card rounded-2xl p-5 hover:translate-y-0.5 hover:shadow-2xl transition-transform">
+              </span>
+            </Link>
+            <Link to="/settings" className="glass-card rounded-2xl p-5 hover:-translate-y-1 hover:shadow-2xl hover:border-indigo-500/30 transition-all group cursor-pointer">
               <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400 mb-3">
                 Security
               </p>
-              <h3 className="font-medium text-slate-50 mb-1">Settings</h3>
+              <h3 className="font-medium text-slate-50 mb-1 group-hover:text-indigo-300 transition-colors">Settings</h3>
               <p className="text-slate-400 text-xs">
                 Manage login, password and personal preferences for your account.
               </p>
-              <Link
-                to="/settings"
-                className="mt-4 inline-flex text-[12px] text-indigo-300 hover:text-indigo-200"
-              >
+              <span className="mt-4 inline-flex text-[12px] text-indigo-300 group-hover:text-indigo-200">
                 Open settings →
-              </Link>
-            </div>
-            <div className="glass-card rounded-2xl p-5 hover:translate-y-0.5 hover:shadow-2xl transition-transform">
+              </span>
+            </Link>
+            <div className="glass-card rounded-2xl p-5 hover:-translate-y-1 hover:shadow-2xl hover:border-red-500/30 transition-all group">
               <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400 mb-3">
                 Session
               </p>
-              <h3 className="font-medium text-slate-50 mb-1">Activity</h3>
+              <h3 className="font-medium text-slate-50 mb-1 group-hover:text-red-300 transition-colors">Activity</h3>
               <p className="text-slate-400 text-xs">
                 Track when you last logged in and quickly sign out.
               </p>
+              <p className="text-[11px] text-slate-500 mt-3">Last login</p>
+              <p className="text-slate-200 text-sm">{lastLogin}</p>
               <button
                 onClick={handleLogout}
-                className="mt-4 inline-flex text-[12px] text-red-300 hover:text-red-200"
+                className="mt-4 inline-flex text-[12px] text-red-300 hover:text-red-200 transition-colors"
               >
                 Sign out of this session →
               </button>

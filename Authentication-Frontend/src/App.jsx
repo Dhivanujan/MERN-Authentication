@@ -6,8 +6,11 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
+import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { useAuth } from "./context/AuthContext";
+import AuthLayout from "./components/AuthLayout";
+import DashboardLayout from "./components/DashboardLayout";
 
 function App() {
   const { isAuthenticated } = useAuth();
@@ -19,20 +22,34 @@ function App() {
           <Route
             path="/"
             element={
-              isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />
+              isAuthenticated ? (
+                <Navigate to="/dashboard" replace />
+              ) : (
+                <AuthLayout>
+                  <Login />
+                </AuthLayout>
+              )
             }
           />
           <Route
             path="/register"
             element={
-              isAuthenticated ? <Navigate to="/dashboard" replace /> : <Register />
+              isAuthenticated ? (
+                <Navigate to="/dashboard" replace />
+              ) : (
+                <AuthLayout>
+                  <Register />
+                </AuthLayout>
+              )
             }
           />
           <Route
             path="/dashboard"
             element={
               <ProtectedRoute>
-                <Dashboard />
+                <DashboardLayout>
+                  <Dashboard />
+                </DashboardLayout>
               </ProtectedRoute>
             }
           />
@@ -40,7 +57,9 @@ function App() {
             path="/profile"
             element={
               <ProtectedRoute>
-                <Profile />
+                <DashboardLayout>
+                  <Profile />
+                </DashboardLayout>
               </ProtectedRoute>
             }
           />
@@ -48,11 +67,13 @@ function App() {
             path="/settings"
             element={
               <ProtectedRoute>
-                <Settings />
+                <DashboardLayout>
+                  <Settings />
+                </DashboardLayout>
               </ProtectedRoute>
             }
           />
-          <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/"} replace />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </div>
     </Router>

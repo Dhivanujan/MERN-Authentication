@@ -1,19 +1,23 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import PasswordStrength from "../components/PasswordStrength";
+import Toast from "../components/Toast";
+import useToast from "../hooks/useToast";
+import { fileToBase64 } from "../utils/file";
 
 export default function Settings() {
   const { user, updateProfilePhoto, updateAccount } = useAuth();
-  const [success, setSuccess] = useState("");
   const [photoPreview, setPhotoPreview] = useState(user?.profilePhoto);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
+  const [inlineError, setInlineError] = useState("");
   const [formData, setFormData] = useState({
     username: user?.username || "",
     email: user?.email || "",
     password: "",
   });
+  const { toast, showSuccess, showError, hideToast } = useToast();
 
   useEffect(() => {
     setFormData((prev) => ({
@@ -28,24 +32,15 @@ export default function Settings() {
     if (!file) return;
 
     setLoading(true);
-    setError("");
-    setSuccess("");
+    setInlineError("");
 
     try {
-      // Convert file to base64
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64 = reader.result;
-        setPhotoPreview(base64);
-        
-        // Update profile photo in backend
-        await updateProfilePhoto(base64);
-        setSuccess("Profile photo updated successfully!");
-        setTimeout(() => setSuccess(""), 3000);
-      };
-      reader.readAsDataURL(file);
+      const base64 = await fileToBase64(file);
+      setPhotoPreview(base64);
+      await updateProfilePhoto(base64);
+      showSuccess("Profile photo updated successfully");
     } catch (err) {
-      setError(err.message || "Failed to update profile photo");
+      showError(err.message || "Failed to update profile photo");
     } finally {
       setLoading(false);
     }
@@ -61,14 +56,15 @@ export default function Settings() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
-    setError("");
-    setSuccess("");
+    setInlineError("");
 
     const trimmedUsername = formData.username.trim();
     const trimmedEmail = formData.email.trim();
 
     if (!trimmedUsername || !trimmedEmail) {
-      setError("Name and email cannot be empty");
+      const validationMessage = "Name and email cannot be empty";
+      setInlineError(validationMessage);
+      showError(validationMessage);
       setSaving(false);
       return;
     }
@@ -84,10 +80,10 @@ export default function Settings() {
       }
 
       await updateAccount(payload);
-      setSuccess("Settings saved successfully!");
+      showSuccess("Settings saved successfully");
       setFormData((prev) => ({ ...prev, password: "" }));
     } catch (err) {
-      setError(err.message || "Unable to save settings");
+      showError(err.message || "Unable to save settings");
     } finally {
       setSaving(false);
     }
@@ -96,8 +92,11 @@ export default function Settings() {
   const defaultAvatar = `https://i.pravatar.cc/100?u=${user?.email}`;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center py-10 px-4">
-      <div className="absolute inset-0 -z-10 opacity-40 bg-[radial-gradient(circle_at_top,_#4f46e5_0,_transparent_55%),_radial-gradient(circle_at_bottom,_#22d3ee_0,_transparent_55%)]" />
+    <>
+      {toast && (
+        <Toast message={toast.message} type={toast.type} onClose={hideToast} />
+      )}
+
       <div className="glass-card rounded-3xl p-8 w-full max-w-sm relative overflow-hidden">
         <div className="absolute -top-16 -right-10 h-32 w-32 rounded-full bg-indigo-500/30 blur-3xl" />
         <div className="absolute -bottom-16 -left-10 h-32 w-32 rounded-full bg-cyan-400/20 blur-3xl" />
@@ -107,15 +106,9 @@ export default function Settings() {
         </h2>
 
         <form onSubmit={handleSubmit} className="relative flex flex-col gap-4">
-          {error && (
+          {inlineError && (
             <div className="mb-3 p-3 bg-red-500/10 border border-red-500/60 text-red-200 rounded-xl text-xs backdrop-blur">
-              {error}
-            </div>
-          )}
-
-          {success && (
-            <div className="mb-3 p-3 bg-emerald-500/10 border border-emerald-500/60 text-emerald-200 rounded-xl text-xs backdrop-blur">
-              {success}
+              {inlineError}
             </div>
           )}
 
@@ -155,14 +148,17 @@ export default function Settings() {
             placeholder="Email"
             className="subtle-input"
           />
-          <input
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleInputChange}
-            placeholder="New password (optional)"
-            className="subtle-input"
-          />
+          <div>
+            <input
+              type="password"
+              name="password"
+              value={formData.password}
+              onChange={handleInputChange}
+              placeholder="New password (optional)"
+              className="subtle-input"
+            />
+            <PasswordStrength password={formData.password} />
+          </div>
 
           <button
             type="submit"
@@ -182,6 +178,6 @@ export default function Settings() {
           </Link>
         </div>
       </div>
-    </div>
+    </>
   );
 }

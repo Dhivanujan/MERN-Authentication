@@ -45,10 +45,10 @@ export const AuthProvider = ({ children }) => {
     initialiseAuth();
   }, []);
 
-  const register = async (username, email, password) => {
+  const register = async (username, email, password, profilePhoto) => {
     try {
       setError(null);
-      const response = await authAPI.register({ username, email, password });
+      const response = await authAPI.register({ username, email, password, profilePhoto });
       const { token: newToken, user: userData } = response.data;
 
       setToken(newToken);

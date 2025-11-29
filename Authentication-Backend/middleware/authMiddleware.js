@@ -14,10 +14,6 @@ export const protect = async (req, res, next) => {
     return res.status(401).json({ message: 'Not authorized, no token' });
   }
 
-  if (!JWT_SECRET) {
-    return res.status(500).json({ message: 'Server misconfiguration: JWT secret missing' });
-  }
-
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     req.user = { id: decoded.id };
@@ -31,6 +27,9 @@ export const protect = async (req, res, next) => {
     next();
   } catch (error) {
     console.error('Auth middleware error:', error);
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Token expired' });
+    }
     return res.status(401).json({ message: 'Not authorized, token failed' });
   }
 };
