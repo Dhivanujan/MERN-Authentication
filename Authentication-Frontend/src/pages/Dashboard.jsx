@@ -1,10 +1,9 @@
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export default function Dashboard() {
-  const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const lastLogin = user?.lastLogin
     ? new Date(user.lastLogin).toLocaleString(undefined, {
         dateStyle: "medium",
@@ -12,106 +11,74 @@ export default function Dashboard() {
       })
     : "No activity recorded";
 
-  const handleLogout = () => {
-    logout();
-    navigate("/");
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex flex-col">
-      <div className="absolute inset-0 -z-10 opacity-40 bg-[radial-gradient(circle_at_top,_#4f46e5_0,_transparent_55%),_radial-gradient(circle_at_bottom,_#22d3ee_0,_transparent_55%)]" />
+    <div className="max-w-4xl mx-auto">
+      <div className="mb-10">
+        <h1 className="text-3xl font-bold text-slate-900 mb-3">
+          Welcome back, {user?.username?.split(' ')[0] || 'User'} 👋
+        </h1>
+        <p className="text-slate-600 text-lg">
+          Here's what's happening with your account today.
+        </p>
+      </div>
 
-      {/* Header */}
-      <header className="glass-card/0 bg-slate-950/60 border-b border-slate-800/70 backdrop-blur-xl py-4 px-6 flex justify-between items-center sticky top-0 z-20">
-        <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-indigo-500 to-cyan-400 flex items-center justify-center text-[10px] font-semibold text-slate-950">
-            AB
+      <div className="grid md:grid-cols-3 gap-6">
+        {/* Profile Card */}
+        <Link to="/profile" className="group bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-primary-200 transition-all">
+          <div className="h-10 w-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center mb-4 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
           </div>
-          <div>
-            <h1 className="text-sm font-semibold text-slate-50 tracking-wide">AuthBoard</h1>
-            {user && (
-              <p className="text-[11px] text-slate-400">Signed in as {user.username}</p>
-            )}
-          </div>
-        </div>
-        <nav className="flex items-center gap-4 text-[13px]">
-          <Link to="/profile" className="text-slate-300 hover:text-indigo-300">
-            Profile
-          </Link>
-          <Link to="/settings" className="text-slate-300 hover:text-indigo-300">
-            Settings
-          </Link>
-          <button
-            onClick={handleLogout}
-            className="text-red-300 hover:text-red-200 text-[13px]"
-          >
-            Logout
-          </button>
-        </nav>
-      </header>
+          <h3 className="text-lg font-semibold text-slate-900 mb-2">Profile</h3>
+          <p className="text-slate-500 text-sm mb-4">
+            Update your personal information and public profile details.
+          </p>
+          <span className="text-sm font-medium text-primary-600 group-hover:text-primary-700 flex items-center gap-1">
+            Manage profile <span className="group-hover:translate-x-0.5 transition-transform">→</span>
+          </span>
+        </Link>
 
-      {/* Content */}
-      <main className="flex-grow flex flex-col items-center justify-center text-center px-4 py-8">
-        <div className="max-w-4xl w-full">
-          <div className="mb-8">
-            <p className="text-xs uppercase tracking-[0.25em] text-slate-400 mb-2">
-              Overview
-            </p>
-            <h2 className="text-2xl font-bold text-slate-50 mb-2 flex items-center justify-center gap-2">
-              Welcome back
-              <span className="text-xl">👋</span>
-            </h2>
-            <p className="text-slate-400 text-sm">
-              You’re signed in and ready to manage your account, profile and
-              preferences.
-            </p>
+        {/* Settings Card */}
+        <Link to="/settings" className="group bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-primary-200 transition-all">
+          <div className="h-10 w-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
           </div>
+          <h3 className="text-lg font-semibold text-slate-900 mb-2">Settings</h3>
+          <p className="text-slate-500 text-sm mb-4">
+            Configure security preferences and account options.
+          </p>
+          <span className="text-sm font-medium text-primary-600 group-hover:text-primary-700 flex items-center gap-1">
+            View settings <span className="group-hover:translate-x-0.5 transition-transform">→</span>
+          </span>
+        </Link>
 
-          <div className="grid sm:grid-cols-3 gap-5 w-full">
-            <Link to="/profile" className="glass-card rounded-2xl p-5 hover:-translate-y-1 hover:shadow-2xl hover:border-indigo-500/30 transition-all group cursor-pointer">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400 mb-3">
-                Account
-              </p>
-              <h3 className="font-medium text-slate-50 mb-1 group-hover:text-indigo-300 transition-colors">Profile</h3>
-              <p className="text-slate-400 text-xs">
-                View and update your avatar, name and contact details.
-              </p>
-              <span className="mt-4 inline-flex text-[12px] text-indigo-300 group-hover:text-indigo-200">
-                Open profile →
-              </span>
-            </Link>
-            <Link to="/settings" className="glass-card rounded-2xl p-5 hover:-translate-y-1 hover:shadow-2xl hover:border-indigo-500/30 transition-all group cursor-pointer">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400 mb-3">
-                Security
-              </p>
-              <h3 className="font-medium text-slate-50 mb-1 group-hover:text-indigo-300 transition-colors">Settings</h3>
-              <p className="text-slate-400 text-xs">
-                Manage login, password and personal preferences for your account.
-              </p>
-              <span className="mt-4 inline-flex text-[12px] text-indigo-300 group-hover:text-indigo-200">
-                Open settings →
-              </span>
-            </Link>
-            <div className="glass-card rounded-2xl p-5 hover:-translate-y-1 hover:shadow-2xl hover:border-red-500/30 transition-all group">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400 mb-3">
-                Session
-              </p>
-              <h3 className="font-medium text-slate-50 mb-1 group-hover:text-red-300 transition-colors">Activity</h3>
-              <p className="text-slate-400 text-xs">
-                Track when you last logged in and quickly sign out.
-              </p>
-              <p className="text-[11px] text-slate-500 mt-3">Last login</p>
-              <p className="text-slate-200 text-sm">{lastLogin}</p>
-              <button
-                onClick={handleLogout}
-                className="mt-4 inline-flex text-[12px] text-red-300 hover:text-red-200 transition-colors"
-              >
-                Sign out of this session →
-              </button>
+        {/* Session Card */}
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+          <div className="h-10 w-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold text-slate-900 mb-2">Session Info</h3>
+          <div className="space-y-3">
+            <div>
+              <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Last Login</p>
+              <p className="text-sm text-slate-700 mt-1">{lastLogin}</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Status</p>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
+                <span className="text-sm text-slate-700">Active now</span>
+              </div>
             </div>
           </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

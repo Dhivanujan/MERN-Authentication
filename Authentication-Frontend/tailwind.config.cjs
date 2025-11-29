@@ -1,3 +1,5 @@
+const defaultTheme = require('tailwindcss/defaultTheme');
+
 module.exports = {
   content: [
     "./index.html",
@@ -5,21 +7,28 @@ module.exports = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Inter', ...defaultTheme.fontFamily.sans],
+      },
       colors: {
-        lavender: {
-          50: '#fdfbfd',
-          100: '#f7f4f9',
-          200: '#eee6f3',
-          300: '#e0d0ea',
-          400: '#cbb0dd',
-          500: '#b18bce',
-          600: '#9869bd',
-          700: '#8250a6',
-          800: '#6d418a',
-          900: '#5a3670',
-          950: '#3b1e4d',
+        primary: {
+          50: '#eff6ff',
+          100: '#dbeafe',
+          200: '#bfdbfe',
+          300: '#93c5fd',
+          400: '#60a5fa',
+          500: '#3b82f6',
+          600: '#2563eb',
+          700: '#1d4ed8',
+          800: '#1e40af',
+          900: '#1e3a8a',
+          950: '#172554',
         },
       },
+      boxShadow: {
+        'soft': '0 2px 10px rgba(0, 0, 0, 0.03)',
+        'card': '0 4px 20px rgba(0, 0, 0, 0.05)',
+      }
     },
   },
   plugins: [],

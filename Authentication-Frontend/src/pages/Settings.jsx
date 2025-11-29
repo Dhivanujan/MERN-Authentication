@@ -5,6 +5,8 @@ import PasswordStrength from "../components/PasswordStrength";
 import Toast from "../components/Toast";
 import useToast from "../hooks/useToast";
 import { fileToBase64 } from "../utils/file";
+import Input from "../components/Input";
+import Button from "../components/Button";
 
 export default function Settings() {
   const { user, updateProfilePhoto, updateAccount } = useAuth();
@@ -49,8 +51,7 @@ export default function Settings() {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    setError("");
-    setSuccess("");
+    setInlineError("");
   };
 
   const handleSubmit = async (e) => {
@@ -97,85 +98,91 @@ export default function Settings() {
         <Toast message={toast.message} type={toast.type} onClose={hideToast} />
       )}
 
-      <div className="glass-card rounded-3xl p-8 w-full max-w-sm relative overflow-hidden">
-        <div className="absolute -top-16 -right-10 h-32 w-32 rounded-full bg-indigo-500/30 blur-3xl" />
-        <div className="absolute -bottom-16 -left-10 h-32 w-32 rounded-full bg-cyan-400/20 blur-3xl" />
+      <div className="max-w-2xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-slate-900">Account Settings</h1>
+          <p className="text-slate-500">Manage your account details and security preferences.</p>
+        </div>
 
-        <h2 className="relative text-2xl font-semibold text-slate-50 mb-6 text-center">
-          Account settings
-        </h2>
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="p-6 sm:p-8">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {inlineError && (
+                <div className="p-3 bg-red-50 border border-red-100 text-red-600 rounded-lg text-sm font-medium">
+                  {inlineError}
+                </div>
+              )}
 
-        <form onSubmit={handleSubmit} className="relative flex flex-col gap-4">
-          {inlineError && (
-            <div className="mb-3 p-3 bg-red-500/10 border border-red-500/60 text-red-200 rounded-xl text-xs backdrop-blur">
-              {inlineError}
-            </div>
-          )}
+              {/* Profile Photo Section */}
+              <div className="flex items-center gap-6 pb-6 border-b border-slate-100">
+                <div className="relative">
+                  <img
+                    src={photoPreview || defaultAvatar}
+                    alt="User Avatar"
+                    className="w-16 h-16 rounded-full object-cover border border-slate-200"
+                  />
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-slate-900">Profile Photo</h3>
+                  <p className="text-xs text-slate-500 mb-3">Update your profile picture.</p>
+                  <label className="inline-flex items-center px-3 py-1.5 bg-white border border-slate-300 rounded-md text-xs font-medium text-slate-700 hover:bg-slate-50 cursor-pointer transition-colors shadow-sm">
+                    {loading ? 'Uploading...' : 'Change photo'}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoUpload}
+                      disabled={loading}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              </div>
 
-          {/* Profile Photo Section */}
-          <div className="flex flex-col items-center gap-3 pb-4 border-b border-slate-800/70">
-            <p className="text-sm font-medium text-slate-200">Profile photo</p>
-            <img
-              src={photoPreview || defaultAvatar}
-              alt="User Avatar"
-              className="w-20 h-20 rounded-full border-4 border-indigo-400 object-cover shadow-lg shadow-slate-950/70"
-            />
-            <label className="primary-btn px-4 py-2 text-xs font-medium cursor-pointer h-auto">
-              {loading ? 'Uploading …' : 'Change photo'}
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handlePhotoUpload}
-                disabled={loading}
-                className="hidden"
-              />
-            </label>
+              <div className="grid gap-5">
+                <Input
+                  label="Full Name"
+                  type="text"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleInputChange}
+                  placeholder="Your full name"
+                />
+                
+                <Input
+                  label="Email Address"
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  placeholder="name@company.com"
+                />
+
+                <div className="pt-4 border-t border-slate-100">
+                  <h3 className="text-sm font-medium text-slate-900 mb-4">Change Password</h3>
+                  <div className="space-y-1">
+                    <Input
+                      label="New Password"
+                      type="password"
+                      name="password"
+                      value={formData.password}
+                      onChange={handleInputChange}
+                      placeholder="Leave blank to keep current password"
+                    />
+                    {formData.password && <PasswordStrength password={formData.password} />}
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 flex items-center justify-end gap-3">
+                <Link to="/dashboard">
+                  <Button variant="ghost" type="button">Cancel</Button>
+                </Link>
+                <Button type="submit" disabled={saving} className="w-auto">
+                  {saving ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
+            </form>
           </div>
-
-          <input
-            type="text"
-            name="username"
-            value={formData.username}
-            onChange={handleInputChange}
-            placeholder="Full name"
-            className="subtle-input"
-          />
-          <input
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleInputChange}
-            placeholder="Email"
-            className="subtle-input"
-          />
-          <div>
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleInputChange}
-              placeholder="New password (optional)"
-              className="subtle-input"
-            />
-            <PasswordStrength password={formData.password} />
-          </div>
-
-          <button
-            type="submit"
-            className="primary-btn w-full h-10 mt-1"
-            disabled={saving}
-          >
-            {saving ? "Saving changes..." : "Save changes"}
-          </button>
-        </form>
-
-        <div className="relative text-center mt-5">
-          <Link
-            to="/dashboard"
-            className="text-indigo-300 text-sm hover:text-indigo-200 hover:underline"
-          >
-            Back to dashboard
-          </Link>
         </div>
       </div>
     </>

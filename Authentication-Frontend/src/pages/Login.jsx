@@ -4,6 +4,9 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Toast from "../components/Toast";
 import useToast from "../hooks/useToast";
+import AuthCard from "../components/AuthCard";
+import Input from "../components/Input";
+import Button from "../components/Button";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -48,87 +51,67 @@ export default function Login() {
         <Toast message={toast.message} type={toast.type} onClose={hideToast} />
       )}
 
-      <div className="glass-card rounded-3xl px-8 py-8 w-full max-w-md relative overflow-hidden">
-        <div className="absolute -top-24 -right-20 h-48 w-48 rounded-full bg-lavender-400/30 blur-3xl" />
-        <div className="absolute -bottom-24 -left-20 h-48 w-48 rounded-full bg-lavender-300/30 blur-3xl" />
-
-        <div className="relative text-center mb-8">
-          <p className="text-[10px] uppercase tracking-[0.25em] text-lavender-600 font-bold mb-2">Welcome back</p>
-          <h2 className="text-3xl font-bold text-slate-800">
-            Sign in to <span className="text-lavender-600">AuthBoard</span>
-          </h2>
-          <p className="text-sm text-slate-500 mt-2">
-            Secure access to your dashboard and profile
-          </p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="relative flex flex-col gap-5">
+      <AuthCard 
+        title="Welcome back" 
+        subtitle="Please enter your details to sign in."
+      >
+        <form onSubmit={handleSubmit} className="space-y-5">
           {formError && (
-            <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs font-medium">
+            <div className="p-3 bg-red-50 border border-red-100 text-red-600 rounded-lg text-sm font-medium flex items-center gap-2">
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
               {formError}
             </div>
           )}
 
-          {/* Email Input */}
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-600 ml-1">Email Address</label>
-            <input
-              type="email"
-              name="email"
-              placeholder="john@example.com"
-              value={formData.email}
-              onChange={handleChange}
-              className="subtle-input"
-              required
-            />
-          </div>
+          <Input
+            label="Email"
+            type="email"
+            name="email"
+            placeholder="Enter your email"
+            value={formData.email}
+            onChange={handleChange}
+            required
+          />
 
-          {/* Password Input */}
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-600 ml-1">Password</label>
-            <input
+            <Input
+              label="Password"
               type="password"
               name="password"
               placeholder="••••••••"
               value={formData.password}
               onChange={handleChange}
-              className="subtle-input"
               required
             />
           </div>
 
-          {/* Remember / Forgot */}
-          <div className="flex items-center justify-between text-slate-500 text-xs mt-1">
-            <label className="flex items-center gap-2 cursor-pointer">
+          <div className="flex items-center justify-between">
+            <label className="flex items-center gap-2 cursor-pointer group">
               <input
-                className="w-4 h-4 accent-lavender-600 rounded border-gray-300"
                 type="checkbox"
+                className="w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500 transition-colors"
               />
-              Remember me
+              <span className="text-sm text-slate-600 group-hover:text-slate-800 transition-colors">Remember me</span>
             </label>
-            <button type="button" className="text-lavender-600 font-medium hover:text-lavender-700 hover:underline">
-              Forgot Password?
+            <button type="button" className="text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors">
+              Forgot password?
             </button>
           </div>
 
-          {/* Login Button */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="mt-4 w-full primary-btn h-12 text-base shadow-lavender-500/20"
-          >
-            {loading ? "Logging in..." : "Sign In"}
-          </button>
+          <Button type="submit" disabled={loading}>
+            {loading ? "Signing in..." : "Sign in"}
+          </Button>
 
-          {/* Sign up */}
-          <p className="text-slate-500 text-xs text-center mt-2">
-            Don’t have an account?{" "}
-            <Link to="/register" className="text-lavender-700 font-semibold hover:text-lavender-800 hover:underline">
-              Create an account
+          <p className="text-center text-sm text-slate-600">
+            Don't have an account?{" "}
+            <Link to="/register" className="font-medium text-primary-600 hover:text-primary-700 transition-colors">
+              Sign up
             </Link>
           </p>
         </form>
-      </div>
+      </AuthCard>
     </>
   );
 }

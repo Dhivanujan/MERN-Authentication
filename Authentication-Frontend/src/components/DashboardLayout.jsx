@@ -3,12 +3,9 @@ import Header from "./Header";
 
 export default function DashboardLayout({ children }) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex flex-col">
-      <div className="absolute inset-0 -z-10 opacity-40 bg-[radial-gradient(circle_at_top,_#4f46e5_0,_transparent_55%),_radial-gradient(circle_at_bottom,_#22d3ee_0,_transparent_55%)]" />
-      
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900">
       <Header />
-      
-      <main className="flex-grow flex flex-col items-center px-4 py-8 animate-in fade-in duration-500">
+      <main className="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {children}
       </main>
     </div>

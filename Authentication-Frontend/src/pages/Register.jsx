@@ -5,6 +5,9 @@ import PasswordStrength from "../components/PasswordStrength";
 import Toast from "../components/Toast";
 import useToast from "../hooks/useToast";
 import { fileToBase64 } from "../utils/file";
+import AuthCard from "../components/AuthCard";
+import Input from "../components/Input";
+import Button from "../components/Button";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -81,39 +84,34 @@ export default function Register() {
         <Toast message={toast.message} type={toast.type} onClose={hideToast} />
       )}
 
-      <div className="glass-card rounded-3xl px-8 py-8 w-full max-w-md relative overflow-hidden">
-        <div className="absolute -top-24 -right-20 h-48 w-48 rounded-full bg-lavender-400/30 blur-3xl" />
-        <div className="absolute -bottom-24 -left-20 h-48 w-48 rounded-full bg-lavender-300/30 blur-3xl" />
-
-        <div className="relative text-center mb-8">
-          <p className="text-[10px] uppercase tracking-[0.25em] text-lavender-600 font-bold mb-2">Get started</p>
-          <h2 className="text-3xl font-bold text-slate-800">Create Account</h2>
-          <p className="text-sm text-slate-500 mt-2">
-            Join us to manage your profile professionally
-          </p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="relative flex flex-col gap-5">
+      <AuthCard 
+        title="Create an account" 
+        subtitle="Start your journey with us today."
+      >
+        <form onSubmit={handleSubmit} className="space-y-5">
           {formError && (
-            <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs font-medium">
+            <div className="p-3 bg-red-50 border border-red-100 text-red-600 rounded-lg text-sm font-medium flex items-center gap-2">
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
               {formError}
             </div>
           )}
 
           {/* Profile Photo Upload */}
-          <div className="flex justify-center mb-2">
+          <div className="flex justify-center">
             <div className="relative group">
-              <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-lg bg-lavender-100 flex items-center justify-center">
+              <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-slate-100 shadow-sm bg-slate-50 flex items-center justify-center">
                 {photoPreview ? (
                   <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
                 ) : (
-                  <svg className="w-10 h-10 text-lavender-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                 )}
               </div>
-              <label className="absolute bottom-0 right-0 bg-lavender-600 text-white p-2 rounded-full cursor-pointer shadow-md hover:bg-lavender-700 transition-colors">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <label className="absolute bottom-0 right-0 bg-white text-slate-600 p-1.5 rounded-full cursor-pointer shadow-md border border-slate-100 hover:text-primary-600 transition-colors">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
@@ -122,81 +120,61 @@ export default function Register() {
             </div>
           </div>
 
-          {/* Full Name */}
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-600 ml-1">Full Name</label>
-            <input
-              type="text"
-              name="username"
-              placeholder="John Doe"
-              value={formData.username}
-              onChange={handleChange}
-              className="subtle-input"
-              required
-            />
-          </div>
+          <Input
+            label="Full Name"
+            type="text"
+            name="username"
+            placeholder="e.g. John Doe"
+            value={formData.username}
+            onChange={handleChange}
+            required
+          />
 
-          {/* Email */}
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-600 ml-1">Email Address</label>
-            <input
-              type="email"
-              name="email"
-              placeholder="john@example.com"
-              value={formData.email}
-              onChange={handleChange}
-              className="subtle-input"
-              required
-            />
-          </div>
+          <Input
+            label="Email"
+            type="email"
+            name="email"
+            placeholder="name@company.com"
+            value={formData.email}
+            onChange={handleChange}
+            required
+          />
 
-          {/* Password */}
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-600 ml-1">Password</label>
-            <input
+            <Input
+              label="Password"
               type="password"
               name="password"
-              placeholder="••••••••"
+              placeholder="Create a password"
               value={formData.password}
               onChange={handleChange}
-              className="subtle-input"
               required
             />
             <PasswordStrength password={formData.password} />
           </div>
 
-          {/* Confirm Password */}
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-600 ml-1">Confirm Password</label>
-            <input
-              type="password"
-              name="confirmPassword"
-              placeholder="••••••••"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              className="subtle-input"
-              required
-            />
-          </div>
+          <Input
+            label="Confirm Password"
+            type="password"
+            name="confirmPassword"
+            placeholder="Confirm your password"
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            required
+          />
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="mt-4 w-full primary-btn h-12 text-base shadow-lavender-500/20"
-          >
-            {loading ? "Creating account..." : "Create Account"}
-          </button>
+          <Button type="submit" disabled={loading}>
+            {loading ? "Creating account..." : "Create account"}
+          </Button>
 
-          {/* Login Redirect */}
-          <p className="text-slate-500 text-xs text-center mt-2">
+          <p className="text-center text-sm text-slate-600">
             Already have an account?{" "}
-            <Link to="/" className="text-lavender-700 font-semibold hover:text-lavender-800 hover:underline">
+            <Link to="/" className="font-medium text-primary-600 hover:text-primary-700 transition-colors">
               Sign in
             </Link>
           </p>
         </form>
-      </div>
+      </AuthCard>
     </>
   );
 }
