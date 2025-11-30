@@ -40,6 +40,10 @@ export const register = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: 'Username, email, and password are required' });
   }
 
+  if (!profilePhoto) {
+    return res.status(400).json({ message: 'Profile photo is required' });
+  }
+
   if (password.length < 6) {
     return res.status(400).json({ message: 'Password must be at least 6 characters long' });
   }

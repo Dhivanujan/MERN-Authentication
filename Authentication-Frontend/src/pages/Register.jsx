@@ -55,6 +55,12 @@ export default function Register() {
         return;
       }
 
+      if (!formData.profilePhoto) {
+        setFormError("Profile photo is required");
+        setLoading(false);
+        return;
+      }
+
       if (formData.password !== formData.confirmPassword) {
         setFormError("Passwords do not match");
         setLoading(false);

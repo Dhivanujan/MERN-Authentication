@@ -14,7 +14,9 @@ api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      // Remove quotes if they exist (common issue with localStorage JSON.stringify)
+      const cleanToken = token.replace(/^"|"$/g, '');
+      config.headers.Authorization = `Bearer ${cleanToken}`;
     }
     return config;
   },

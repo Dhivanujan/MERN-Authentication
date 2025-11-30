@@ -28,7 +28,7 @@ app.use(
 	})
 );
 app.use(helmet());
-app.use(express.json({ limit: "10kb" }));
+app.use(express.json({ limit: "50mb" }));
 app.use(
 	rateLimit({
 		windowMs: 15 * 60 * 1000,
