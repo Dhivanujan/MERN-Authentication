@@ -20,8 +20,12 @@ export default function Header() {
         <div className="flex justify-between h-16 items-center">
           <div className="flex items-center gap-8">
             <Link to="/dashboard" className="flex items-center gap-2.5 group">
-              <div className="h-8 w-8 rounded-lg bg-primary-600 flex items-center justify-center text-white font-bold text-sm shadow-sm group-hover:bg-primary-700 transition-colors">
-                AB
+              <div className="h-8 w-8 rounded-lg overflow-hidden shadow-sm border border-slate-200 group-hover:border-primary-200 transition-colors">
+                <img 
+                  src={user?.profilePhoto} 
+                  alt={user?.username || "User"} 
+                  className="w-full h-full object-cover"
+                />
               </div>
               <span className="text-lg font-bold text-slate-900 tracking-tight">AuthBoard</span>
             </Link>

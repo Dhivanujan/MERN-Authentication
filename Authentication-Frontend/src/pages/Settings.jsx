@@ -33,6 +33,12 @@ export default function Settings() {
     const file = e.target.files[0];
     if (!file) return;
 
+    const validTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+    if (!validTypes.includes(file.type)) {
+      showError("Please upload a valid image (JPEG, PNG)");
+      return;
+    }
+
     setLoading(true);
     setInlineError("");
 
@@ -98,9 +104,6 @@ export default function Settings() {
     }
   };
 
-  // Fallback only if image is missing (legacy users), otherwise show placeholder
-  const defaultAvatar = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23cbd5e1'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' /%3E%3C/svg%3E";
-
   return (
     <>
       {toast && (
@@ -126,18 +129,18 @@ export default function Settings() {
               <div className="flex items-center gap-6 pb-6 border-b border-slate-100">
                 <div className="relative">
                   <img
-                    src={photoPreview || defaultAvatar}
+                    src={photoPreview || user?.profilePhoto}
                     alt="User Avatar"
                     className="w-16 h-16 rounded-full object-cover border border-slate-200"
-                  />
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-slate-900">Profile Photo</h3>
-                  <p className="text-xs text-slate-500 mb-3">Update your profile picture.</p>
-                  <label className="inline-flex items-center px-3 py-1.5 bg-white border border-slate-300 rounded-md text-xs font-medium text-slate-700 hover:bg-slate-50 cursor-pointer transition-colors shadow-sm">
                     {loading ? 'Uploading...' : 'Change photo'}
                     <input
                       type="file"
+                      accept="image/png, image/jpeg, image/jpg"
+                      onChange={handlePhotoUpload}
+                      disabled={loading}
+                      className="hidden"
+                    />
+                  </label>="file"
                       accept="image/*"
                       onChange={handlePhotoUpload}
                       disabled={loading}

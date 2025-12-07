@@ -13,13 +13,22 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="mb-10">
-        <h1 className="text-3xl font-bold text-slate-900 mb-3">
-          Welcome back, {user?.username?.split(' ')[0] || 'User'} 👋
-        </h1>
-        <p className="text-slate-600 text-lg">
-          Here's what's happening with your account today.
-        </p>
+      <div className="mb-10 flex items-center gap-5">
+        <div className="h-20 w-20 rounded-full overflow-hidden border-2 border-white shadow-md ring-2 ring-slate-100">
+          <img 
+            src={user?.profilePhoto} 
+            alt={user?.username} 
+            className="w-full h-full object-cover"
+          />
+        </div>
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900 mb-1">
+            Welcome back, {user?.username?.split(' ')[0] || 'User'} 👋
+          </h1>
+          <p className="text-slate-600 text-lg">
+            Here's what's happening with your account today.
+          </p>
+        </div>
       </div>
 
       <div className="grid md:grid-cols-3 gap-6">
