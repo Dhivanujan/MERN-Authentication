@@ -8,6 +8,8 @@ const userSchema = new mongoose.Schema(
     profilePhoto: { type: String, required: true },
     lastLogin: { type: Date, default: null },
     isEmailVerified: { type: Boolean, default: false },
+    resetPasswordToken: String,
+    resetPasswordExpire: Date,
     createdAt: { type: Date, default: Date.now },
   },
   { timestamps: true }

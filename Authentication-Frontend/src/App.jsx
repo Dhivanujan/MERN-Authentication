@@ -3,6 +3,8 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
@@ -39,6 +41,30 @@ function App() {
               ) : (
                 <AuthLayout>
                   <Register />
+                </AuthLayout>
+              )
+            }
+          />
+          <Route
+            path="/forgot-password"
+            element={
+              isAuthenticated ? (
+                <Navigate to="/dashboard" replace />
+              ) : (
+                <AuthLayout>
+                  <ForgotPassword />
+                </AuthLayout>
+              )
+            }
+          />
+          <Route
+            path="/reset-password/:resetToken"
+            element={
+              isAuthenticated ? (
+                <Navigate to="/dashboard" replace />
+              ) : (
+                <AuthLayout>
+                  <ResetPassword />
                 </AuthLayout>
               )
             }
