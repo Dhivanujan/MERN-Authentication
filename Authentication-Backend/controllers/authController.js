@@ -1,5 +1,4 @@
 import crypto from 'crypto';
-import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
@@ -192,4 +191,85 @@ export const updateAccount = asyncHandler(async (req, res) => {
   }
 
   return res.json({ user: buildUserPayload(user) });
+});
+
+// @desc    Forgot Password
+// @route   POST /api/auth/forgot-password
+// @access  Public
+export const forgotPassword = asyncHandler(async (req, res) => {
+  const email = normaliseEmail(req.body.email);
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+
+  // Generate token
+  const resetToken = crypto.randomBytes(20).toString('hex');
+
+  // Hash token and set to resetPasswordToken field
+  user.resetPasswordToken = crypto
+    .createHash('sha256')
+    .update(resetToken)
+    .digest('hex');
+
+  // Set expire
+  user.resetPasswordExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+  await user.save({ validateBeforeSave: false });
+
+  // Create reset url
+  const resetUrl = `${req.protocol}://${req.get('host')}/api/auth/reset-password/${resetToken}`;
+
+  // In a real app, send email here. For now, we log it.
+  console.log(`Reset Password URL: ${resetUrl}`);
+
+  try {
+    // await sendEmail({ ... });
+    res.status(200).json({ success: true, data: 'Email sent (check console for link)' });
+  } catch (err) {
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save({ validateBeforeSave: false });
+    return res.status(500).json({ message: 'Email could not be sent' });
+  }
+});
+
+// @desc    Reset Password
+// @route   PUT /api/auth/reset-password/:resetToken
+// @access  Public
+export const resetPassword = asyncHandler(async (req, res) => {
+  // Get hashed token
+  const resetPasswordToken = crypto
+    .createHash('sha256')
+    .update(req.params.resetToken)
+    .digest('hex');
+
+  const user = await User.findOne({
+    resetPasswordToken,
+    resetPasswordExpire: { $gt: Date.now() },
+  });
+
+  if (!user) {
+    return res.status(400).json({ message: 'Invalid token' });
+  }
+
+  // Set new password
+  const password = req.body.password?.toString();
+  if (!password || password.length < 6) {
+    return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+  }
+
+  const salt = await bcrypt.genSalt(10);
+  user.password = await bcrypt.hash(password, salt);
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpire = undefined;
+
+  await user.save();
+
+  return res.status(200).json({
+    success: true,
+    token: signToken(user._id),
+    user: buildUserPayload(user),
+  });
 });

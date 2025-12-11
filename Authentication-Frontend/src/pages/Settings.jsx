@@ -132,16 +132,16 @@ export default function Settings() {
                     src={photoPreview || user?.profilePhoto}
                     alt="User Avatar"
                     className="w-16 h-16 rounded-full object-cover border border-slate-200"
+                  />
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-slate-900">Profile Photo</h3>
+                  <p className="text-xs text-slate-500 mb-3">Update your profile picture.</p>
+                  <label className="inline-flex items-center px-3 py-1.5 bg-white border border-slate-300 rounded-md text-xs font-medium text-slate-700 hover:bg-slate-50 cursor-pointer transition-colors shadow-sm">
                     {loading ? 'Uploading...' : 'Change photo'}
                     <input
                       type="file"
                       accept="image/png, image/jpeg, image/jpg"
-                      onChange={handlePhotoUpload}
-                      disabled={loading}
-                      className="hidden"
-                    />
-                  </label>="file"
-                      accept="image/*"
                       onChange={handlePhotoUpload}
                       disabled={loading}
                       className="hidden"
