@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import defaultAvatar from "../assets/default-avatar.svg";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -16,7 +17,7 @@ export default function Dashboard() {
       <div className="mb-10 flex items-center gap-5">
         <div className="h-20 w-20 rounded-full overflow-hidden border-2 border-white shadow-md ring-2 ring-slate-100">
           <img 
-            src={user?.profilePhoto} 
+            src={user?.profilePhoto || defaultAvatar} 
             alt={user?.username} 
             className="w-full h-full object-cover"
           />

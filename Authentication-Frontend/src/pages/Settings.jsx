@@ -7,6 +7,7 @@ import useToast from "../hooks/useToast";
 import { fileToBase64 } from "../utils/file";
 import Input from "../components/Input";
 import Button from "../components/Button";
+import defaultAvatar from "../assets/default-avatar.svg";
 
 export default function Settings() {
   const { user, updateProfilePhoto, updateAccount } = useAuth();
@@ -129,7 +130,7 @@ export default function Settings() {
               <div className="flex items-center gap-6 pb-6 border-b border-slate-100">
                 <div className="relative">
                   <img
-                    src={photoPreview || user?.profilePhoto}
+                    src={photoPreview || user?.profilePhoto || defaultAvatar}
                     alt="User Avatar"
                     className="w-16 h-16 rounded-full object-cover border border-slate-200"
                   />

@@ -1,6 +1,7 @@
 import React from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import defaultAvatar from "../assets/default-avatar.svg";
 
 export default function Header() {
   const { user, logout } = useAuth();
@@ -22,7 +23,7 @@ export default function Header() {
             <Link to="/dashboard" className="flex items-center gap-2.5 group">
               <div className="h-8 w-8 rounded-lg overflow-hidden shadow-sm border border-slate-200 group-hover:border-primary-200 transition-colors">
                 <img 
-                  src={user?.profilePhoto} 
+                  src={user?.profilePhoto || defaultAvatar} 
                   alt={user?.username || "User"} 
                   className="w-full h-full object-cover"
                 />

@@ -7,6 +7,8 @@ import useToast from "../hooks/useToast";
 import AuthCard from "../components/AuthCard";
 import Input from "../components/Input";
 import Button from "../components/Button";
+import googleIcon from "../assets/google.svg";
+import githubIcon from "../assets/github.svg";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -115,11 +117,11 @@ export default function Login() {
 
           <div className="grid grid-cols-2 gap-3">
             <button type="button" className="flex items-center justify-center gap-2 px-4 py-2 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
-              <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
+              <img src={googleIcon} alt="Google" className="w-5 h-5" />
               <span className="text-sm font-medium text-slate-700">Google</span>
             </button>
             <button type="button" className="flex items-center justify-center gap-2 px-4 py-2 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
-              <img src="https://www.svgrepo.com/show/475647/github-color.svg" alt="GitHub" className="w-5 h-5" />
+              <img src={githubIcon} alt="GitHub" className="w-5 h-5" />
               <span className="text-sm font-medium text-slate-700">GitHub</span>
             </button>
           </div>

@@ -5,6 +5,7 @@ import Toast from "../components/Toast";
 import useToast from "../hooks/useToast";
 import { fileToBase64 } from "../utils/file";
 import Button from "../components/Button";
+import defaultAvatar from "../assets/default-avatar.svg";
 
 export default function Profile() {
   const { user, updateProfilePhoto } = useAuth();
@@ -55,7 +56,7 @@ export default function Profile() {
                 <div className="relative group">
                   <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-slate-50 shadow-sm bg-slate-100">
                     <img
-                      src={photoPreview || user?.profilePhoto}
+                      src={photoPreview || user?.profilePhoto || defaultAvatar}
                       alt="User Avatar"
                       className="w-full h-full object-cover"
                     />
