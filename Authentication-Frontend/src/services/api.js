@@ -29,6 +29,8 @@ export const authAPI = {
   getMe: () => api.get('/auth/me'),
   updateProfilePhoto: (photoData) => api.put('/auth/profile-photo', photoData),
   updateAccount: (data) => api.put('/auth/update', data),
+  forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
+  resetPassword: (token, password) => api.put(`/auth/reset-password/${token}`, { password }),
 };
 
 export default api;

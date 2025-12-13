@@ -5,7 +5,7 @@ import Input from "../components/Input";
 import Button from "../components/Button";
 import useToast from "../hooks/useToast";
 import Toast from "../components/Toast";
-import api from "../services/api";
+import { authAPI } from "../services/api";
 import PasswordStrength from "../components/PasswordStrength";
 
 export default function ResetPassword() {
@@ -24,7 +24,7 @@ export default function ResetPassword() {
     }
     setLoading(true);
     try {
-      await api.put(`/auth/reset-password/${resetToken}`, { password });
+      await authAPI.resetPassword(resetToken, password);
       showSuccess("Password reset successful! Redirecting...");
       setTimeout(() => navigate("/"), 2000);
     } catch (err) {

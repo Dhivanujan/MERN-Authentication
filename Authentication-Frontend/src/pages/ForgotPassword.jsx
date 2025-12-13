@@ -5,7 +5,7 @@ import Input from "../components/Input";
 import Button from "../components/Button";
 import useToast from "../hooks/useToast";
 import Toast from "../components/Toast";
-import api from "../services/api";
+import { authAPI } from "../services/api";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -16,7 +16,7 @@ export default function ForgotPassword() {
     e.preventDefault();
     setLoading(true);
     try {
-      await api.post("/auth/forgot-password", { email });
+      await authAPI.forgotPassword(email);
       showSuccess("Password reset link sent to your email (check console)");
     } catch (err) {
       showError(err.response?.data?.message || "Failed to send reset link");
