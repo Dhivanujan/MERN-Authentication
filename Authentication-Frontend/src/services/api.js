@@ -13,9 +13,9 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
-    if (token) {
-      // Remove quotes if they exist (common issue with localStorage JSON.stringify)
-      const cleanToken = token.replace(/^"|"$/g, '');
+    if (token && token !== 'null' && token !== 'undefined') {
+      // Remove all quotes if they exist (common issue with localStorage JSON.stringify)
+      const cleanToken = token.replace(/"/g, '');
       config.headers.Authorization = `Bearer ${cleanToken}`;
     }
     return config;
