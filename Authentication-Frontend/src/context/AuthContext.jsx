@@ -1,12 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { authAPI } from '../services/api';
+import { authAPI, setAccessToken } from '../services/api';
 
 const AuthContext = createContext(null);
-
-const STORAGE_KEYS = {
-  TOKEN: 'token',
-  USER: 'user',
-};
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -14,29 +9,25 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Load token and user from localStorage on mount and verify with backend
+  // Load token and user from backend on mount
   useEffect(() => {
     const initialiseAuth = async () => {
-      const storedToken = localStorage.getItem(STORAGE_KEYS.TOKEN);
-      const storedUser = localStorage.getItem(STORAGE_KEYS.USER);
-
-      if (!storedToken) {
-        setLoading(false);
-        return;
-      }
-
-      setToken(storedToken);
-
       try {
-        const response = await authAPI.getMe();
-        setUser(response.data.user);
-        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(response.data.user));
+        // Try to refresh token first
+        const response = await authAPI.refresh();
+        const { token: newToken } = response.data;
+        
+        setAccessToken(newToken);
+        setToken(newToken);
+        
+        // Then get user details
+        const userResponse = await authAPI.getMe();
+        setUser(userResponse.data.user);
       } catch (err) {
-        // Token might be invalid/expired
-        localStorage.removeItem(STORAGE_KEYS.TOKEN);
-        localStorage.removeItem(STORAGE_KEYS.USER);
+        // Not authenticated or refresh failed
         setUser(null);
         setToken(null);
+        setAccessToken(null);
       } finally {
         setLoading(false);
       }
@@ -51,10 +42,9 @@ export const AuthProvider = ({ children }) => {
       const response = await authAPI.register({ username, email, password, profilePhoto });
       const { token: newToken, user: userData } = response.data;
 
+      setAccessToken(newToken);
       setToken(newToken);
       setUser(userData);
-      localStorage.setItem(STORAGE_KEYS.TOKEN, newToken);
-      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userData));
 
       return response.data;
     } catch (err) {
@@ -70,10 +60,9 @@ export const AuthProvider = ({ children }) => {
       const response = await authAPI.login({ email, password });
       const { token: newToken, user: userData } = response.data;
 
+      setAccessToken(newToken);
       setToken(newToken);
       setUser(userData);
-      localStorage.setItem(STORAGE_KEYS.TOKEN, newToken);
-      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userData));
 
       return response.data;
     } catch (err) {
@@ -83,11 +72,16 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem(STORAGE_KEYS.TOKEN);
-    localStorage.removeItem(STORAGE_KEYS.USER);
+  const logout = async () => {
+    try {
+      await authAPI.logout();
+    } catch (error) {
+      console.error('Logout failed', error);
+    } finally {
+      setUser(null);
+      setToken(null);
+      setAccessToken(null);
+    }
   };
 
   const updateProfilePhoto = async (profilePhoto) => {
@@ -97,7 +91,6 @@ export const AuthProvider = ({ children }) => {
 
       const updatedUser = response.data.user;
       setUser(updatedUser);
-      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(updatedUser));
       
       return response.data;
     } catch (err) {
@@ -118,7 +111,6 @@ export const AuthProvider = ({ children }) => {
       const response = await authAPI.updateAccount(payload);
       const updatedUser = response.data.user;
       setUser(updatedUser);
-      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(updatedUser));
 
       return updatedUser;
     } catch (err) {

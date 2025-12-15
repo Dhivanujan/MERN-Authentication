@@ -15,10 +15,27 @@ const buildUserPayload = (user) => ({
   lastLogin: user.lastLogin,
 });
 
-const signToken = (id) =>
-  jwt.sign({ id }, process.env.JWT_SECRET, {
+const generateAccessAndRefreshTokens = async (userId) => {
+  const accessToken = jwt.sign({ id: userId }, process.env.JWT_SECRET, {
+    expiresIn: '15m',
+  });
+  const refreshToken = jwt.sign({ id: userId }, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET, {
     expiresIn: '7d',
   });
+
+  await User.findByIdAndUpdate(userId, { refreshToken });
+
+  return { accessToken, refreshToken };
+};
+
+const setCookies = (res, refreshToken) => {
+  res.cookie('refreshToken', refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  });
+};
 
 const handleDuplicateKey = (error, res) => {
   if (error?.code === 11000) {
@@ -69,9 +86,12 @@ export const register = asyncHandler(async (req, res) => {
     return handleDuplicateKey(error, res);
   }
 
+  const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id);
+  setCookies(res, refreshToken);
+
   return res.status(201).json({
     user: buildUserPayload(user),
-    token: signToken(user._id),
+    token: accessToken,
   });
 });
 
@@ -99,10 +119,71 @@ export const login = asyncHandler(async (req, res) => {
   user.lastLogin = new Date();
   await user.save({ validateBeforeSave: false });
 
+  const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id);
+  setCookies(res, refreshToken);
+
   return res.json({
     user: buildUserPayload(user),
-    token: signToken(user._id),
+    token: accessToken,
   });
+});
+
+// @desc    Refresh Access Token
+// @route   POST /api/auth/refresh
+// @access  Public (Cookie)
+export const refresh = asyncHandler(async (req, res) => {
+  const cookies = req.cookies;
+  if (!cookies?.refreshToken) return res.status(401).json({ message: 'Unauthorized' });
+
+  const refreshToken = cookies.refreshToken;
+  res.clearCookie('refreshToken', { httpOnly: true, sameSite: 'strict', secure: process.env.NODE_ENV === 'production' });
+
+  const foundUser = await User.findOne({ refreshToken });
+
+  // Detected refresh token reuse!
+  if (!foundUser) {
+    jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET, async (err, decoded) => {
+      if (err) return res.sendStatus(403); // Forbidden
+      // Delete refresh tokens of hacked user
+      const hackedUser = await User.findById(decoded.id);
+      if (hackedUser) {
+        hackedUser.refreshToken = ''; // Invalidate
+        await hackedUser.save();
+      }
+    });
+    return res.sendStatus(403); // Forbidden
+  }
+
+  // Evaluate jwt
+  jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET, async (err, decoded) => {
+    if (err || foundUser._id.toString() !== decoded.id) return res.sendStatus(403);
+
+    // Refresh token was still valid
+    const { accessToken, refreshToken: newRefreshToken } = await generateAccessAndRefreshTokens(foundUser._id);
+
+    setCookies(res, newRefreshToken);
+
+    res.json({ token: accessToken });
+  });
+});
+
+// @desc    Logout user
+// @route   POST /api/auth/logout
+// @access  Public
+export const logout = asyncHandler(async (req, res) => {
+  const cookies = req.cookies;
+  if (!cookies?.refreshToken) return res.sendStatus(204); // No content
+
+  const refreshToken = cookies.refreshToken;
+  const foundUser = await User.findOne({ refreshToken });
+
+  if (foundUser) {
+    foundUser.refreshToken = '';
+    await foundUser.save();
+  }
+
+  res.clearCookie('refreshToken', { httpOnly: true, sameSite: 'strict', secure: process.env.NODE_ENV === 'production' });
+  res.status(200).json({ message: 'Logged out successfully' });
 });
 
 // @desc    Update user profile photo
@@ -268,9 +349,12 @@ export const resetPassword = asyncHandler(async (req, res) => {
 
   await user.save();
 
+  const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id);
+  setCookies(res, refreshToken);
+
   return res.status(200).json({
     success: true,
-    token: signToken(user._id),
+    token: accessToken,
     user: buildUserPayload(user),
   });
 });
