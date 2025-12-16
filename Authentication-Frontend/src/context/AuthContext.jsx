@@ -15,14 +15,18 @@ export const AuthProvider = ({ children }) => {
       try {
         // Try to refresh token first
         const response = await authAPI.refresh();
-        const { token: newToken } = response.data;
+        const { token: newToken, user: userData } = response.data;
         
         setAccessToken(newToken);
         setToken(newToken);
         
-        // Then get user details
-        const userResponse = await authAPI.getMe();
-        setUser(userResponse.data.user);
+        // If user data is returned from refresh, use it. Otherwise fetch it.
+        if (userData) {
+          setUser(userData);
+        } else {
+          const userResponse = await authAPI.getMe();
+          setUser(userResponse.data.user);
+        }
       } catch (err) {
         // Not authenticated or refresh failed
         setUser(null);

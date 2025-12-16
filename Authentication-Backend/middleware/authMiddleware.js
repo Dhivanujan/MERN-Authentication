@@ -19,8 +19,8 @@ export const protect = async (req, res, next) => {
     req.user = { id: decoded.id };
 
     // Optionally ensure user still exists
-    const user = await User.findById(decoded.id).select('_id');
-    if (!user) {
+    const userExists = await User.exists({ _id: decoded.id });
+    if (!userExists) {
       return res.status(401).json({ message: 'User no longer exists' });
     }
 

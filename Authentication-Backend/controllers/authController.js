@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
 import User from '../models/User.js';
 import asyncHandler from '../middleware/asyncHandler.js';
 
@@ -15,15 +16,13 @@ const buildUserPayload = (user) => ({
   lastLogin: user.lastLogin,
 });
 
-const generateAccessAndRefreshTokens = async (userId) => {
+const generateTokens = (userId) => {
   const accessToken = jwt.sign({ id: userId }, process.env.JWT_SECRET, {
     expiresIn: '15m',
   });
   const refreshToken = jwt.sign({ id: userId }, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET, {
     expiresIn: '7d',
   });
-
-  await User.findByIdAndUpdate(userId, { refreshToken });
 
   return { accessToken, refreshToken };
 };
@@ -76,18 +75,22 @@ export const register = asyncHandler(async (req, res) => {
 
   let user;
   try {
+  const userId = new mongoose.Types.ObjectId();
+  const { accessToken, refreshToken } = generateTokens(userId);
+
+  let user;
+  try {
     user = await User.create({
+      _id: userId,
       username,
       email,
       password: hashedPassword,
       profilePhoto,
+      refreshToken
     });
   } catch (error) {
     return handleDuplicateKey(error, res);
   }
-
-  const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id);
-  setCookies(res, refreshToken);
 
   return res.status(201).json({
     user: buildUserPayload(user),
@@ -114,10 +117,13 @@ export const login = asyncHandler(async (req, res) => {
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) {
     return res.status(401).json({ message: 'Invalid credentials' });
-  }
+  const { accessToken, refreshToken } = generateTokens(user._id);
 
-  user.lastLogin = new Date();
-  await user.save({ validateBeforeSave: false });
+  await User.findByIdAndUpdate(user._id, { 
+    lastLogin: new Date(),
+    refreshToken 
+  });
+
 
   const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id);
   setCookies(res, refreshToken);
@@ -152,7 +158,9 @@ export const refresh = asyncHandler(async (req, res) => {
       }
     });
     return res.sendStatus(403); // Forbidden
-  }
+  }generateTokens(foundUser._id);
+
+    await User.findByIdAndUpdate(foundUser._id, { refreshToken: newRefreshToken }
 
   // Evaluate jwt
   jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET, async (err, decoded) => {
@@ -163,7 +171,10 @@ export const refresh = asyncHandler(async (req, res) => {
 
     setCookies(res, newRefreshToken);
 
-    res.json({ token: accessToken });
+    res.json({ 
+      token: accessToken,
+      user: buildUserPayload(foundUser)
+    });
   });
 });
 
@@ -223,7 +234,7 @@ export const getMe = asyncHandler(async (req, res) => {
     return res.status(401).json({ message: 'Not authorized' });
   }
 
-  const user = await User.findById(id).select('-password');
+  const user = await User.findById(id).select('-password').lean();
   if (!user) {
     return res.status(404).json({ message: 'User not found' });
   }
@@ -338,9 +349,11 @@ export const resetPassword = asyncHandler(async (req, res) => {
 
   // Set new password
   const password = req.body.password?.toString();
-  if (!password || password.length < 6) {
-    return res.status(400).json({ message: 'Password must be at least 6 characters long' });
-  }
+  const { accessToken, refreshToken } = generateTokens(user._id);
+  user.refreshToken = refreshToken;
+
+  await user.save();
+
 
   const salt = await bcrypt.genSalt(10);
   user.password = await bcrypt.hash(password, salt);
