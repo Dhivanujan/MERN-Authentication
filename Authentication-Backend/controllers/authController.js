@@ -17,9 +17,7 @@ const buildUserPayload = (user) => ({
 });
 
 const generateTokens = (userId) => {
-  const accessToken = jwt.sign({ id: userId }, process.env.JWT_SECRET, {
-    expiresIn: '15m',
-  });
+  const accessToken = jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: '15m' });
   const refreshToken = jwt.sign({ id: userId }, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET, {
     expiresIn: '7d',
   });
@@ -44,6 +42,13 @@ const handleDuplicateKey = (error, res) => {
   throw error;
 };
 
+const validatePassword = (password) => {
+  if (!password || password.length < 6) {
+    return 'Password must be at least 6 characters long';
+  }
+  return null;
+};
+
 // @desc    Register a new user
 // @route   POST /api/auth/register
 // @access  Public
@@ -61,8 +66,9 @@ export const register = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: 'Profile photo is required' });
   }
 
-  if (password.length < 6) {
-    return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+  const passwordError = validatePassword(password);
+  if (passwordError) {
+    return res.status(400).json({ message: passwordError });
   }
 
   const userExists = await User.findOne({ $or: [{ email }, { username }] });
@@ -73,8 +79,6 @@ export const register = asyncHandler(async (req, res) => {
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(password, salt);
 
-  let user;
-  try {
   const userId = new mongoose.Types.ObjectId();
   const { accessToken, refreshToken } = generateTokens(userId);
 
@@ -86,11 +90,13 @@ export const register = asyncHandler(async (req, res) => {
       email,
       password: hashedPassword,
       profilePhoto,
-      refreshToken
+      refreshToken,
     });
   } catch (error) {
     return handleDuplicateKey(error, res);
   }
+
+  setCookies(res, refreshToken);
 
   return res.status(201).json({
     user: buildUserPayload(user),
@@ -117,15 +123,15 @@ export const login = asyncHandler(async (req, res) => {
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) {
     return res.status(401).json({ message: 'Invalid credentials' });
+  }
+
   const { accessToken, refreshToken } = generateTokens(user._id);
 
-  await User.findByIdAndUpdate(user._id, { 
+  await User.findByIdAndUpdate(user._id, {
     lastLogin: new Date(),
-    refreshToken 
+    refreshToken,
   });
 
-
-  const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id);
   setCookies(res, refreshToken);
 
   return res.json({
@@ -142,40 +148,45 @@ export const refresh = asyncHandler(async (req, res) => {
   if (!cookies?.refreshToken) return res.status(401).json({ message: 'Unauthorized' });
 
   const refreshToken = cookies.refreshToken;
-  res.clearCookie('refreshToken', { httpOnly: true, sameSite: 'strict', secure: process.env.NODE_ENV === 'production' });
+  res.clearCookie('refreshToken', {
+    httpOnly: true,
+    sameSite: 'strict',
+    secure: process.env.NODE_ENV === 'production',
+  });
 
   const foundUser = await User.findOne({ refreshToken });
 
-  // Detected refresh token reuse!
   if (!foundUser) {
     jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET, async (err, decoded) => {
-      if (err) return res.sendStatus(403); // Forbidden
-      // Delete refresh tokens of hacked user
+      if (err) return; // Token already invalid
       const hackedUser = await User.findById(decoded.id);
       if (hackedUser) {
-        hackedUser.refreshToken = ''; // Invalidate
+        hackedUser.refreshToken = '';
         await hackedUser.save();
       }
     });
-    return res.sendStatus(403); // Forbidden
-  }generateTokens(foundUser._id);
+    return res.sendStatus(403);
+  }
 
-    await User.findByIdAndUpdate(foundUser._id, { refreshToken: newRefreshToken }
+  try {
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET);
+    if (foundUser._id.toString() !== decoded.id) {
+      return res.sendStatus(403);
+    }
 
-  // Evaluate jwt
-  jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET, async (err, decoded) => {
-    if (err || foundUser._id.toString() !== decoded.id) return res.sendStatus(403);
-
-    // Refresh token was still valid
-    const { accessToken, refreshToken: newRefreshToken } = await generateAccessAndRefreshTokens(foundUser._id);
+    const { accessToken, refreshToken: newRefreshToken } = generateTokens(foundUser._id);
+    foundUser.refreshToken = newRefreshToken;
+    await foundUser.save();
 
     setCookies(res, newRefreshToken);
 
-    res.json({ 
+    return res.json({
       token: accessToken,
-      user: buildUserPayload(foundUser)
+      user: buildUserPayload(foundUser),
     });
-  });
+  } catch (err) {
+    return res.sendStatus(403);
+  }
 });
 
 // @desc    Logout user
@@ -193,7 +204,11 @@ export const logout = asyncHandler(async (req, res) => {
     await foundUser.save();
   }
 
-  res.clearCookie('refreshToken', { httpOnly: true, sameSite: 'strict', secure: process.env.NODE_ENV === 'production' });
+  res.clearCookie('refreshToken', {
+    httpOnly: true,
+    sameSite: 'strict',
+    secure: process.env.NODE_ENV === 'production',
+  });
   res.status(200).json({ message: 'Logged out successfully' });
 });
 
@@ -212,11 +227,7 @@ export const updateProfilePhoto = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: 'Profile photo is required' });
   }
 
-  const user = await User.findByIdAndUpdate(
-    id,
-    { profilePhoto },
-    { new: true }
-  );
+  const user = await User.findByIdAndUpdate(id, { profilePhoto }, { new: true });
 
   if (!user) {
     return res.status(404).json({ message: 'User not found' });
@@ -260,8 +271,9 @@ export const updateAccount = asyncHandler(async (req, res) => {
   if (email) updates.email = email;
 
   if (password) {
-    if (password.length < 6) {
-      return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      return res.status(400).json({ message: passwordError });
     }
     const salt = await bcrypt.genSalt(10);
     updates.password = await bcrypt.hash(password, salt);
@@ -296,30 +308,20 @@ export const forgotPassword = asyncHandler(async (req, res) => {
     return res.status(404).json({ message: 'User not found' });
   }
 
-  // Generate token
   const resetToken = crypto.randomBytes(20).toString('hex');
 
-  // Hash token and set to resetPasswordToken field
-  user.resetPasswordToken = crypto
-    .createHash('sha256')
-    .update(resetToken)
-    .digest('hex');
-
-  // Set expire
+  user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
   user.resetPasswordExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
 
   await user.save({ validateBeforeSave: false });
 
-  // Create reset url
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
   const resetUrl = `${frontendUrl}/reset-password/${resetToken}`;
 
-  // In a real app, send email here. For now, we log it.
   console.log(`Reset Password URL: ${resetUrl}`);
 
   try {
-    // await sendEmail({ ... });
-    res.status(200).json({ success: true, data: 'Email sent (check console for link)' });
+    return res.status(200).json({ success: true, data: 'Email sent (check console for link)', resetUrl });
   } catch (err) {
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
@@ -332,11 +334,7 @@ export const forgotPassword = asyncHandler(async (req, res) => {
 // @route   PUT /api/auth/reset-password/:resetToken
 // @access  Public
 export const resetPassword = asyncHandler(async (req, res) => {
-  // Get hashed token
-  const resetPasswordToken = crypto
-    .createHash('sha256')
-    .update(req.params.resetToken)
-    .digest('hex');
+  const resetPasswordToken = crypto.createHash('sha256').update(req.params.resetToken).digest('hex');
 
   const user = await User.findOne({
     resetPasswordToken,
@@ -347,22 +345,22 @@ export const resetPassword = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: 'Invalid token' });
   }
 
-  // Set new password
   const password = req.body.password?.toString();
-  const { accessToken, refreshToken } = generateTokens(user._id);
-  user.refreshToken = refreshToken;
-
-  await user.save();
-
+  const passwordError = validatePassword(password);
+  if (passwordError) {
+    return res.status(400).json({ message: passwordError });
+  }
 
   const salt = await bcrypt.genSalt(10);
   user.password = await bcrypt.hash(password, salt);
   user.resetPasswordToken = undefined;
   user.resetPasswordExpire = undefined;
 
+  const { accessToken, refreshToken } = generateTokens(user._id);
+  user.refreshToken = refreshToken;
+
   await user.save();
 
-  const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id);
   setCookies(res, refreshToken);
 
   return res.status(200).json({

@@ -9,14 +9,18 @@ import { authAPI } from "../services/api";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
+  const [resetLink, setResetLink] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast, showSuccess, showError, hideToast } = useToast();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setResetLink("");
     try {
-      await authAPI.forgotPassword(email);
+      const response = await authAPI.forgotPassword(email);
+      const link = response?.data?.resetUrl;
+      if (link) setResetLink(link);
       showSuccess("Password reset link sent to your email (check console)");
     } catch (err) {
       showError(err.response?.data?.message || "Failed to send reset link");
@@ -41,6 +45,11 @@ export default function ForgotPassword() {
           <Button type="submit" disabled={loading}>
             {loading ? "Sending..." : "Send Reset Link"}
           </Button>
+          {resetLink && (
+            <p className="text-sm text-gray-600 text-center">
+              Dev shortcut: <a className="text-primary-600 font-medium" href={resetLink}>Open reset link</a>
+            </p>
+          )}
           <div className="text-center">
             <Link to="/" className="text-sm text-primary-600 hover:text-primary-700 font-medium">
               Back to Login
