@@ -21,13 +21,22 @@ const allowedOrigins = (process.env.CLIENT_URL || "")
 	.map((origin) => origin.trim())
 	.filter(Boolean);
 
+if (!allowedOrigins.length) {
+	throw new Error("CLIENT_URL is required and must include at least one origin");
+}
+
+const corsOptions = {
+	origin: (origin, callback) => {
+		// Allow same-origin or non-browser requests without an Origin header
+		if (!origin) return callback(null, true);
+		if (allowedOrigins.includes(origin)) return callback(null, true);
+		return callback(new Error("Not allowed by CORS"));
+	},
+	credentials: true,
+};
+
 app.set("trust proxy", 1);
-app.use(
-	cors({
-		origin: allowedOrigins.length ? allowedOrigins : "*",
-		credentials: true,
-	})
-);
+app.use(cors(corsOptions));
 app.use(helmet());
 app.use(cookieParser());
 app.use(express.json({ limit: "50mb" }));

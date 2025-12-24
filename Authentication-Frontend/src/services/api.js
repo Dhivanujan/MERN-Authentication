@@ -3,9 +3,14 @@ import axios from 'axios';
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 let accessToken = null;
+let authFailureHandler = null;
 
 export const setAccessToken = (token) => {
   accessToken = token;
+};
+
+export const setAuthFailureHandler = (handler) => {
+  authFailureHandler = handler;
 };
 
 const api = axios.create({
@@ -31,9 +36,20 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    const status = error.response?.status;
+    const isAuthError = status === 401 || status === 403;
+
+    const triggerAuthFailure = () => {
+      setAccessToken(null);
+      if (typeof authFailureHandler === 'function') {
+        authFailureHandler();
+      } else {
+        window.location.href = '/';
+      }
+    };
     
     // Prevent infinite loop
-    if (error.response?.status === 401 && !originalRequest._retry && originalRequest.url !== '/auth/refresh' && originalRequest.url !== '/auth/login') {
+    if (isAuthError && !originalRequest._retry && originalRequest.url !== '/auth/refresh' && originalRequest.url !== '/auth/login') {
       originalRequest._retry = true;
       
       try {
@@ -45,8 +61,15 @@ api.interceptors.response.use(
         
         return api(originalRequest);
       } catch (refreshError) {
+        if (refreshError.response?.status === 401 || refreshError.response?.status === 403) {
+          triggerAuthFailure();
+        }
         return Promise.reject(refreshError);
       }
+    }
+    
+    if (isAuthError && originalRequest.url === '/auth/refresh') {
+      triggerAuthFailure();
     }
     return Promise.reject(error);
   }

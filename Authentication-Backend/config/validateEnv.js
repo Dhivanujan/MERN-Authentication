@@ -1,6 +1,8 @@
 const REQUIRED_KEYS = [
   'MONGO_URI',
   'JWT_SECRET',
+  'JWT_REFRESH_SECRET',
+  'CLIENT_URL',
 ];
 
 export const validateEnv = () => {

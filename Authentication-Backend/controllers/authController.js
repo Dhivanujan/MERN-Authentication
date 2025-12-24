@@ -43,10 +43,22 @@ const handleDuplicateKey = (error, res) => {
 };
 
 const validatePassword = (password) => {
-  if (!password || password.length < 6) {
-    return 'Password must be at least 6 characters long';
+  if (!password) {
+    return 'Password is required';
   }
-  return null;
+
+  const minLength = 8;
+  const hasMinLength = password.length >= minLength;
+  const hasLower = /[a-z]/.test(password);
+  const hasUpper = /[A-Z]/.test(password);
+  const hasNumber = /\d/.test(password);
+  const hasSymbol = /[^A-Za-z0-9]/.test(password);
+
+  if (hasMinLength && hasLower && hasUpper && hasNumber && hasSymbol) {
+    return null;
+  }
+
+  return 'Password must be at least 8 characters and include upper, lower, number, and symbol';
 };
 
 // @desc    Register a new user

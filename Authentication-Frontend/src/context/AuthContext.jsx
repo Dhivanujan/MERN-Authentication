@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { authAPI, setAccessToken } from '../services/api';
+import { authAPI, setAccessToken, setAuthFailureHandler } from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -38,6 +38,27 @@ export const AuthProvider = ({ children }) => {
     };
 
     initialiseAuth();
+  }, []);
+
+  useEffect(() => {
+    const handleAuthFailure = async () => {
+      try {
+        await authAPI.logout();
+      } catch (err) {
+        // Ignore logout errors during forced sign-out
+      }
+
+      setUser(null);
+      setToken(null);
+      setAccessToken(null);
+
+      if (window.location.pathname !== '/') {
+        window.location.href = '/';
+      }
+    };
+
+    setAuthFailureHandler(handleAuthFailure);
+    return () => setAuthFailureHandler(null);
   }, []);
 
   const register = async (username, email, password, profilePhoto) => {
