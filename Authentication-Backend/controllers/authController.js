@@ -1,12 +1,39 @@
-import crypto from 'crypto';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import mongoose from 'mongoose';
-import User from '../models/User.js';
-import asyncHandler from '../middleware/asyncHandler.js';
+import crypto from "crypto";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
+import speakeasy from "speakeasy";
+import User from "../models/User.js";
+import asyncHandler from "../middleware/asyncHandler.js";
 
-const normaliseEmail = (value = '') => value.trim().toLowerCase();
-const trimValue = (value = '') => value.trim();
+const ACCESS_TTL = "15m";
+const REFRESH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const MAX_SESSIONS = 5;
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOCK_WINDOW_MS = 15 * 60 * 1000;
+
+const normaliseEmail = (value = "") => value.trim().toLowerCase();
+const trimValue = (value = "") => value.trim();
+const hashToken = (token) => crypto.createHash("sha256").update(token).digest("hex");
+const generateRandomToken = (bytes = 64) => crypto.randomBytes(bytes).toString("hex");
+
+const fingerprintRequest = (req) => {
+  const rawIp = (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").toString();
+  const ip = rawIp.split(",")[0].trim();
+  const userAgent = req.headers["user-agent"] || "unknown";
+  const country = (req.headers["cf-ipcountry"] || req.headers["x-country"] || "unknown").toString();
+  const sessionLabel = req.headers["x-device-label"] || undefined;
+  return { ip, userAgent, country, sessionLabel };
+};
+
+const isAnomaly = (user, fp) => {
+  if (!user.lastIp && !user.lastCountry && !user.lastUserAgent) return false;
+  return (
+    (user.lastIp && user.lastIp !== fp.ip) ||
+    (user.lastCountry && user.lastCountry !== fp.country) ||
+    (user.lastUserAgent && user.lastUserAgent !== fp.userAgent)
+  );
+};
 
 const buildUserPayload = (user) => ({
   _id: user._id,
@@ -14,29 +41,79 @@ const buildUserPayload = (user) => ({
   email: user.email,
   profilePhoto: user.profilePhoto,
   lastLogin: user.lastLogin,
+  isEmailVerified: user.isEmailVerified,
+  mfaEnabled: user.mfaEnabled,
 });
 
-const generateTokens = (userId) => {
-  const accessToken = jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: '15m' });
-  const refreshToken = jwt.sign({ id: userId }, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET, {
-    expiresIn: '7d',
-  });
+const generateAccessToken = (user) =>
+  jwt.sign(
+    { id: user._id, isEmailVerified: user.isEmailVerified, mfaEnabled: user.mfaEnabled },
+    process.env.JWT_SECRET,
+    { expiresIn: ACCESS_TTL }
+  );
 
-  return { accessToken, refreshToken };
+const setRefreshCookie = (res, refreshToken) => {
+  const secure = process.env.COOKIE_SECURE === "true" || process.env.NODE_ENV === "production";
+  const sameSite = secure ? "none" : "lax";
+  const domain = process.env.COOKIE_DOMAIN || undefined;
+
+  res.cookie("refreshToken", refreshToken, {
+    httpOnly: true,
+    secure,
+    sameSite,
+    domain,
+    maxAge: REFRESH_TTL_MS,
+  });
 };
 
-const setCookies = (res, refreshToken) => {
-  res.cookie('refreshToken', refreshToken, {
+const clearRefreshCookie = (res) => {
+  const secure = process.env.COOKIE_SECURE === "true" || process.env.NODE_ENV === "production";
+  const sameSite = secure ? "none" : "lax";
+  const domain = process.env.COOKIE_DOMAIN || undefined;
+
+  res.clearCookie("refreshToken", {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    sameSite,
+    secure,
+    domain,
   });
+};
+
+const createRefreshSession = async (user, req) => {
+  const refreshToken = generateRandomToken(64);
+  const tokenHash = hashToken(refreshToken);
+  const now = Date.now();
+  const fp = fingerprintRequest(req);
+
+  const entry = {
+    tokenHash,
+    createdAt: new Date(now),
+    lastUsedAt: new Date(now),
+    expiresAt: new Date(now + REFRESH_TTL_MS),
+    ip: fp.ip,
+    userAgent: fp.userAgent,
+    country: fp.country,
+    sessionLabel: fp.sessionLabel,
+  };
+
+  user.refreshTokens = (user.refreshTokens || []).filter((rt) => rt.expiresAt > new Date(now));
+  user.refreshTokens.push(entry);
+  if (user.refreshTokens.length > MAX_SESSIONS) {
+    user.refreshTokens = user.refreshTokens.slice(-MAX_SESSIONS);
+  }
+
+  await user.save();
+  return refreshToken;
+};
+
+const rotateRefreshSession = async (user, currentHash, req) => {
+  user.refreshTokens = (user.refreshTokens || []).filter((rt) => rt.tokenHash !== currentHash && rt.expiresAt > new Date());
+  return createRefreshSession(user, req);
 };
 
 const handleDuplicateKey = (error, res) => {
   if (error?.code === 11000) {
-    const field = Object.keys(error.keyValue || {})[0] || 'Field';
+    const field = Object.keys(error.keyValue || {})[0] || "Field";
     return res.status(400).json({ message: `${field} is already in use` });
   }
   throw error;
@@ -44,7 +121,7 @@ const handleDuplicateKey = (error, res) => {
 
 const validatePassword = (password) => {
   if (!password) {
-    return 'Password is required';
+    return "Password is required";
   }
 
   const minLength = 8;
@@ -58,8 +135,31 @@ const validatePassword = (password) => {
     return null;
   }
 
-  return 'Password must be at least 8 characters and include upper, lower, number, and symbol';
+  return "Password must be at least 8 characters and include upper, lower, number, and symbol";
 };
+
+const createEmailVerification = (user) => {
+  const token = generateRandomToken(20);
+  user.emailVerificationToken = hashToken(token);
+  user.emailVerificationExpire = Date.now() + 24 * 60 * 60 * 1000; // 24h
+  return token;
+};
+
+const createMagicLink = (user) => {
+  const token = generateRandomToken(24);
+  user.magicLinkToken = hashToken(token);
+  user.magicLinkExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
+  return token;
+};
+
+const verifyTotp = (secret, token) =>
+  Boolean(
+    secret &&
+    speakeasy.totp.verify({ secret, encoding: "base32", token, window: 1 })
+  );
+
+const generateBackupCodes = () =>
+  Array.from({ length: 8 }).map(() => generateRandomToken(5));
 
 // @desc    Register a new user
 // @route   POST /api/auth/register
@@ -67,15 +167,15 @@ const validatePassword = (password) => {
 export const register = asyncHandler(async (req, res) => {
   const username = trimValue(req.body.username);
   const email = normaliseEmail(req.body.email);
-  const password = req.body.password?.toString() || '';
+  const password = req.body.password?.toString() || "";
   const profilePhoto = req.body.profilePhoto || null;
 
   if (!username || !email || !password) {
-    return res.status(400).json({ message: 'Username, email, and password are required' });
+    return res.status(400).json({ message: "Username, email, and password are required" });
   }
 
   if (!profilePhoto) {
-    return res.status(400).json({ message: 'Profile photo is required' });
+    return res.status(400).json({ message: "Profile photo is required" });
   }
 
   const passwordError = validatePassword(password);
@@ -85,14 +185,13 @@ export const register = asyncHandler(async (req, res) => {
 
   const userExists = await User.findOne({ $or: [{ email }, { username }] });
   if (userExists) {
-    return res.status(400).json({ message: 'User already exists' });
+    return res.status(400).json({ message: "User already exists" });
   }
 
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(password, salt);
 
   const userId = new mongoose.Types.ObjectId();
-  const { accessToken, refreshToken } = generateTokens(userId);
 
   let user;
   try {
@@ -102,82 +201,157 @@ export const register = asyncHandler(async (req, res) => {
       email,
       password: hashedPassword,
       profilePhoto,
-      refreshToken,
     });
   } catch (error) {
     return handleDuplicateKey(error, res);
   }
 
-  setCookies(res, refreshToken);
+  const verificationToken = createEmailVerification(user);
+  await user.save();
+  const frontendUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL?.split(",")[0] || "http://localhost:5173";
+  const verificationUrl = `${frontendUrl.replace(/\/$/, "")}/verify-email/${verificationToken}`;
+  console.log(`Verify email URL: ${verificationUrl}`);
 
   return res.status(201).json({
     user: buildUserPayload(user),
-    token: accessToken,
+    message: "Account created. Please verify your email.",
+    verificationUrl,
   });
 });
 
-// @desc    Login user
+// @desc    Login user (with lockout, anomaly detection, MFA)
 // @route   POST /api/auth/login
 // @access  Public
 export const login = asyncHandler(async (req, res) => {
   const email = normaliseEmail(req.body.email);
-  const password = req.body.password?.toString() || '';
+  const password = req.body.password?.toString() || "";
+  const totp = req.body.totp?.toString();
+  const backupCode = req.body.backupCode?.toString();
 
   if (!email || !password) {
-    return res.status(400).json({ message: 'Email and password are required' });
+    return res.status(400).json({ message: "Email and password are required" });
   }
 
   const user = await User.findOne({ email });
   if (!user) {
-    return res.status(401).json({ message: 'Invalid credentials' });
+    return res.status(401).json({ message: "Invalid credentials" });
+  }
+
+  if (user.lockUntil && user.lockUntil > Date.now()) {
+    const unlocksInMs = user.lockUntil.getTime() - Date.now();
+    return res.status(429).json({ message: `Account locked. Try again in ${Math.ceil(unlocksInMs / 1000)}s` });
   }
 
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) {
-    return res.status(401).json({ message: 'Invalid credentials' });
+    user.loginAttempts += 1;
+    if (user.loginAttempts >= MAX_LOGIN_ATTEMPTS) {
+      user.lockUntil = new Date(Date.now() + LOCK_WINDOW_MS);
+    }
+    await user.save();
+    return res.status(401).json({ message: "Invalid credentials" });
   }
 
-  const { accessToken, refreshToken } = generateTokens(user._id);
+  user.loginAttempts = 0;
+  user.lockUntil = null;
 
-  await User.findByIdAndUpdate(user._id, {
-    lastLogin: new Date(),
-    refreshToken,
-  });
+  if (!user.isEmailVerified) {
+    const verificationToken = createEmailVerification(user);
+    await user.save();
+    const frontendUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL?.split(",")[0] || "http://localhost:5173";
+    const verificationUrl = `${frontendUrl.replace(/\/$/, "")}/verify-email/${verificationToken}`;
+    console.log(`Verify email URL: ${verificationUrl}`);
+    return res.status(403).json({
+      message: "Email not verified. Verification link re-issued.",
+      requiresEmailVerification: true,
+      verificationUrl,
+    });
+  }
 
-  setCookies(res, refreshToken);
+  // MFA gate
+  if (user.mfaEnabled) {
+    const validTotp = totp && verifyTotp(user.totpSecret, totp);
+    let validBackup = false;
+    if (backupCode) {
+      const codeHash = hashToken(backupCode);
+      validBackup = user.backupCodes.includes(codeHash);
+      if (validBackup) {
+        user.backupCodes = user.backupCodes.filter((c) => c !== codeHash);
+      }
+    }
+
+    if (!validTotp && !validBackup) {
+      await user.save();
+      return res.status(403).json({ message: "MFA required", requiresMfa: true });
+    }
+  }
+
+  const fp = fingerprintRequest(req);
+  const anomaly = isAnomaly(user, fp);
+
+  if (anomaly && !user.mfaEnabled) {
+    const magicToken = createMagicLink(user);
+    await user.save();
+    const frontendUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL?.split(",")[0] || "http://localhost:5173";
+    const magicUrl = `${frontendUrl.replace(/\/$/, "")}/magic-login/${magicToken}`;
+    console.log(`Magic link (anomaly): ${magicUrl}`);
+    return res.status(401).json({
+      message: "New device/location detected. Use the magic link sent to your email.",
+      requiresMagicLink: true,
+      magicUrl,
+    });
+  }
+
+  const accessToken = generateAccessToken(user);
+  const refreshToken = await createRefreshSession(user, req);
+
+  user.lastLogin = new Date();
+  user.lastIp = fp.ip;
+  user.lastUserAgent = fp.userAgent;
+  user.lastCountry = fp.country;
+  await user.save();
+
+  setRefreshCookie(res, refreshToken);
 
   return res.json({
     user: buildUserPayload(user),
     token: accessToken,
+    anomalyDetected: anomaly,
   });
 });
 
-// @desc    Refresh Access Token
+// @desc    Refresh Access Token (rotating, hashed, reuse detection)
 // @route   POST /api/auth/refresh
 // @access  Public (Cookie)
 export const refresh = asyncHandler(async (req, res) => {
   const cookies = req.cookies;
-  if (!cookies?.refreshToken) return res.status(401).json({ message: 'Unauthorized' });
+  if (!cookies?.refreshToken) return res.status(401).json({ message: "Unauthorized" });
 
   const refreshToken = cookies.refreshToken;
-  res.clearCookie('refreshToken', {
-    httpOnly: true,
-    sameSite: 'strict',
-    secure: process.env.NODE_ENV === 'production',
-  });
+  clearRefreshCookie(res);
+  const tokenHash = hashToken(refreshToken);
 
-  const foundUser = await User.findOne({ refreshToken });
-
+  const foundUser = await User.findOne({ "refreshTokens.tokenHash": tokenHash });
   if (!foundUser) {
-    jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET, async (err, decoded) => {
-      if (err) return; // Token already invalid
+    // Possible reuse. Invalidate any tokens for decoded user.
+    try {
+      const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET);
       const hackedUser = await User.findById(decoded.id);
       if (hackedUser) {
-        hackedUser.refreshToken = '';
+        hackedUser.refreshTokens = [];
         await hackedUser.save();
       }
-    });
-    return res.sendStatus(403);
+    } catch (err) {
+      // ignore
+    }
+    return res.status(403).json({ message: "Refresh token reuse detected" });
+  }
+
+  const matchingToken = foundUser.refreshTokens.find((rt) => rt.tokenHash === tokenHash);
+  if (!matchingToken || matchingToken.expiresAt < new Date()) {
+    foundUser.refreshTokens = foundUser.refreshTokens.filter((rt) => rt.tokenHash !== tokenHash);
+    await foundUser.save();
+    return res.status(403).json({ message: "Refresh token expired" });
   }
 
   try {
@@ -186,11 +360,9 @@ export const refresh = asyncHandler(async (req, res) => {
       return res.sendStatus(403);
     }
 
-    const { accessToken, refreshToken: newRefreshToken } = generateTokens(foundUser._id);
-    foundUser.refreshToken = newRefreshToken;
-    await foundUser.save();
-
-    setCookies(res, newRefreshToken);
+    const accessToken = generateAccessToken(foundUser);
+    const newRefreshToken = await rotateRefreshSession(foundUser, tokenHash, req);
+    setRefreshCookie(res, newRefreshToken);
 
     return res.json({
       token: accessToken,
@@ -201,27 +373,39 @@ export const refresh = asyncHandler(async (req, res) => {
   }
 });
 
-// @desc    Logout user
+// @desc    Logout user (single session)
 // @route   POST /api/auth/logout
 // @access  Public
 export const logout = asyncHandler(async (req, res) => {
   const cookies = req.cookies;
-  if (!cookies?.refreshToken) return res.sendStatus(204); // No content
+  if (!cookies?.refreshToken) return res.sendStatus(204);
 
   const refreshToken = cookies.refreshToken;
-  const foundUser = await User.findOne({ refreshToken });
+  const tokenHash = hashToken(refreshToken);
+  const foundUser = await User.findOne({ "refreshTokens.tokenHash": tokenHash });
 
   if (foundUser) {
-    foundUser.refreshToken = '';
+    foundUser.refreshTokens = foundUser.refreshTokens.filter((rt) => rt.tokenHash !== tokenHash);
     await foundUser.save();
   }
 
-  res.clearCookie('refreshToken', {
-    httpOnly: true,
-    sameSite: 'strict',
-    secure: process.env.NODE_ENV === 'production',
-  });
-  res.status(200).json({ message: 'Logged out successfully' });
+  clearRefreshCookie(res);
+  res.status(200).json({ message: "Logged out successfully" });
+});
+
+// @desc    Revoke all sessions
+// @route   POST /api/auth/sessions/revoke-all
+// @access  Private
+export const revokeAllSessions = asyncHandler(async (req, res) => {
+  const userId = req.user?.id;
+  if (!userId) return res.status(401).json({ message: "Not authorized" });
+  const user = await User.findById(userId);
+  if (!user) return res.status(404).json({ message: "User not found" });
+
+  user.refreshTokens = [];
+  await user.save();
+  clearRefreshCookie(res);
+  return res.json({ message: "All sessions revoked" });
 });
 
 // @desc    Update user profile photo
@@ -232,17 +416,17 @@ export const updateProfilePhoto = asyncHandler(async (req, res) => {
   const profilePhoto = trimValue(req.body.profilePhoto);
 
   if (!id) {
-    return res.status(401).json({ message: 'Not authorized' });
+    return res.status(401).json({ message: "Not authorized" });
   }
 
   if (!profilePhoto) {
-    return res.status(400).json({ message: 'Profile photo is required' });
+    return res.status(400).json({ message: "Profile photo is required" });
   }
 
   const user = await User.findByIdAndUpdate(id, { profilePhoto }, { new: true });
 
   if (!user) {
-    return res.status(404).json({ message: 'User not found' });
+    return res.status(404).json({ message: "User not found" });
   }
 
   return res.json({ user: buildUserPayload(user) });
@@ -254,12 +438,12 @@ export const updateProfilePhoto = asyncHandler(async (req, res) => {
 export const getMe = asyncHandler(async (req, res) => {
   const { id } = req.user || {};
   if (!id) {
-    return res.status(401).json({ message: 'Not authorized' });
+    return res.status(401).json({ message: "Not authorized" });
   }
 
-  const user = await User.findById(id).select('-password').lean();
+  const user = await User.findById(id).select("-password -totpSecret -totpTempSecret -magicLinkToken -magicLinkExpire").lean();
   if (!user) {
-    return res.status(404).json({ message: 'User not found' });
+    return res.status(404).json({ message: "User not found" });
   }
 
   return res.json({ user });
@@ -271,11 +455,11 @@ export const getMe = asyncHandler(async (req, res) => {
 export const updateAccount = asyncHandler(async (req, res) => {
   const { id } = req.user || {};
   if (!id) {
-    return res.status(401).json({ message: 'Not authorized' });
+    return res.status(401).json({ message: "Not authorized" });
   }
 
-  const username = trimValue(req.body.username || '');
-  const email = normaliseEmail(req.body.email || '');
+  const username = trimValue(req.body.username || "");
+  const email = normaliseEmail(req.body.email || "");
   const password = req.body.password?.toString();
 
   const updates = {};
@@ -292,7 +476,7 @@ export const updateAccount = asyncHandler(async (req, res) => {
   }
 
   if (!Object.keys(updates).length) {
-    return res.status(400).json({ message: 'No updates were provided' });
+    return res.status(400).json({ message: "No updates were provided" });
   }
 
   let user;
@@ -303,7 +487,7 @@ export const updateAccount = asyncHandler(async (req, res) => {
   }
 
   if (!user) {
-    return res.status(404).json({ message: 'User not found' });
+    return res.status(404).json({ message: "User not found" });
   }
 
   return res.json({ user: buildUserPayload(user) });
@@ -317,36 +501,29 @@ export const forgotPassword = asyncHandler(async (req, res) => {
   const user = await User.findOne({ email });
 
   if (!user) {
-    return res.status(404).json({ message: 'User not found' });
+    return res.status(404).json({ message: "User not found" });
   }
 
-  const resetToken = crypto.randomBytes(20).toString('hex');
+  const resetToken = generateRandomToken(20);
 
-  user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+  user.resetPasswordToken = hashToken(resetToken);
   user.resetPasswordExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
 
   await user.save({ validateBeforeSave: false });
 
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-  const resetUrl = `${frontendUrl}/reset-password/${resetToken}`;
+  const frontendUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL?.split(",")[0] || "http://localhost:5173";
+  const resetUrl = `${frontendUrl.replace(/\/$/, "")}/reset-password/${resetToken}`;
 
   console.log(`Reset Password URL: ${resetUrl}`);
 
-  try {
-    return res.status(200).json({ success: true, data: 'Email sent (check console for link)', resetUrl });
-  } catch (err) {
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpire = undefined;
-    await user.save({ validateBeforeSave: false });
-    return res.status(500).json({ message: 'Email could not be sent' });
-  }
+  return res.status(200).json({ success: true, data: "Email sent (check console for link)", resetUrl });
 });
 
 // @desc    Reset Password
 // @route   PUT /api/auth/reset-password/:resetToken
 // @access  Public
 export const resetPassword = asyncHandler(async (req, res) => {
-  const resetPasswordToken = crypto.createHash('sha256').update(req.params.resetToken).digest('hex');
+  const resetPasswordToken = hashToken(req.params.resetToken);
 
   const user = await User.findOne({
     resetPasswordToken,
@@ -354,7 +531,7 @@ export const resetPassword = asyncHandler(async (req, res) => {
   });
 
   if (!user) {
-    return res.status(400).json({ message: 'Invalid token' });
+    return res.status(400).json({ message: "Invalid token" });
   }
 
   const password = req.body.password?.toString();
@@ -368,16 +545,161 @@ export const resetPassword = asyncHandler(async (req, res) => {
   user.resetPasswordToken = undefined;
   user.resetPasswordExpire = undefined;
 
-  const { accessToken, refreshToken } = generateTokens(user._id);
-  user.refreshToken = refreshToken;
+  user.refreshTokens = [];
+  const accessToken = generateAccessToken(user);
+  const refreshToken = await createRefreshSession(user, req);
 
   await user.save();
 
-  setCookies(res, refreshToken);
+  setRefreshCookie(res, refreshToken);
 
   return res.status(200).json({
     success: true,
     token: accessToken,
     user: buildUserPayload(user),
   });
+});
+
+// @desc    Verify email
+// @route   POST /api/auth/verify-email/:token
+// @access  Public
+export const verifyEmail = asyncHandler(async (req, res) => {
+  const tokenHash = hashToken(req.params.token);
+  const user = await User.findOne({
+    emailVerificationToken: tokenHash,
+    emailVerificationExpire: { $gt: Date.now() },
+  });
+
+  if (!user) {
+    return res.status(400).json({ message: "Verification token invalid or expired" });
+  }
+
+  user.isEmailVerified = true;
+  user.emailVerificationToken = undefined;
+  user.emailVerificationExpire = undefined;
+  await user.save();
+
+  return res.json({ message: "Email verified", user: buildUserPayload(user) });
+});
+
+// @desc    Resend email verification
+// @route   POST /api/auth/resend-verification
+// @access  Public
+export const resendVerification = asyncHandler(async (req, res) => {
+  const email = normaliseEmail(req.body.email);
+  const user = await User.findOne({ email });
+
+  if (!user) return res.status(404).json({ message: "User not found" });
+  if (user.isEmailVerified) return res.status(400).json({ message: "Email already verified" });
+
+  const token = createEmailVerification(user);
+  await user.save();
+  const frontendUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL?.split(",")[0] || "http://localhost:5173";
+  const verificationUrl = `${frontendUrl.replace(/\/$/, "")}/verify-email/${token}`;
+  console.log(`Verify email URL: ${verificationUrl}`);
+
+  return res.json({ message: "Verification link re-sent", verificationUrl });
+});
+
+// @desc    Start MFA setup
+// @route   POST /api/auth/mfa/setup
+// @access  Private
+export const startMfaSetup = asyncHandler(async (req, res) => {
+  const userId = req.user?.id;
+  const user = await User.findById(userId);
+  if (!user) return res.status(404).json({ message: "User not found" });
+
+  const secret = speakeasy.generateSecret({ length: 20, name: process.env.ISSUER || "Auth App" });
+  user.totpTempSecret = secret.base32;
+  await user.save();
+
+  return res.json({ base32: secret.base32, otpauthUrl: secret.otpauth_url });
+});
+
+// @desc    Verify MFA setup
+// @route   POST /api/auth/mfa/verify
+// @access  Private
+export const verifyMfaSetup = asyncHandler(async (req, res) => {
+  const userId = req.user?.id;
+  const token = req.body.totp?.toString();
+  const user = await User.findById(userId);
+  if (!user || !user.totpTempSecret) return res.status(400).json({ message: "No MFA setup in progress" });
+
+  const valid = verifyTotp(user.totpTempSecret, token);
+  if (!valid) return res.status(400).json({ message: "Invalid TOTP" });
+
+  user.totpSecret = user.totpTempSecret;
+  user.totpTempSecret = undefined;
+  user.mfaEnabled = true;
+  const backupCodes = generateBackupCodes();
+  user.backupCodes = backupCodes.map((code) => hashToken(code));
+  await user.save();
+
+  return res.json({ message: "MFA enabled", backupCodes });
+});
+
+// @desc    Disable MFA
+// @route   POST /api/auth/mfa/disable
+// @access  Private
+export const disableMfa = asyncHandler(async (req, res) => {
+  const userId = req.user?.id;
+  const totp = req.body.totp?.toString();
+  const user = await User.findById(userId);
+  if (!user || !user.mfaEnabled) return res.status(400).json({ message: "MFA not enabled" });
+
+  const valid = verifyTotp(user.totpSecret, totp);
+  if (!valid) return res.status(401).json({ message: "Invalid TOTP" });
+
+  user.totpSecret = undefined;
+  user.totpTempSecret = undefined;
+  user.mfaEnabled = false;
+  user.backupCodes = [];
+  await user.save();
+
+  return res.json({ message: "MFA disabled" });
+});
+
+// @desc    Request magic link
+// @route   POST /api/auth/magic-link
+// @access  Public
+export const requestMagicLink = asyncHandler(async (req, res) => {
+  const email = normaliseEmail(req.body.email);
+  const user = await User.findOne({ email });
+  if (!user) return res.status(404).json({ message: "User not found" });
+
+  const token = createMagicLink(user);
+  await user.save();
+  const frontendUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL?.split(",")[0] || "http://localhost:5173";
+  const magicUrl = `${frontendUrl.replace(/\/$/, "")}/magic-login/${token}`;
+  console.log(`Magic link URL: ${magicUrl}`);
+
+  return res.json({ message: "Magic link issued", magicUrl });
+});
+
+// @desc    Magic link login
+// @route   POST /api/auth/magic-login
+// @access  Public
+export const magicLogin = asyncHandler(async (req, res) => {
+  const token = req.body.token?.toString();
+  if (!token) return res.status(400).json({ message: "Token required" });
+  const tokenHash = hashToken(token);
+  const user = await User.findOne({ magicLinkToken: tokenHash, magicLinkExpire: { $gt: Date.now() } });
+  if (!user) return res.status(400).json({ message: "Invalid or expired magic link" });
+
+  user.magicLinkToken = undefined;
+  user.magicLinkExpire = undefined;
+  user.isEmailVerified = true;
+
+  const accessToken = generateAccessToken(user);
+  const refreshToken = await createRefreshSession(user, req);
+
+  user.lastLogin = new Date();
+  const fp = fingerprintRequest(req);
+  user.lastIp = fp.ip;
+  user.lastUserAgent = fp.userAgent;
+  user.lastCountry = fp.country;
+  await user.save();
+
+  setRefreshCookie(res, refreshToken);
+  return res.json({ user: buildUserPayload(user), token: accessToken });
 });
