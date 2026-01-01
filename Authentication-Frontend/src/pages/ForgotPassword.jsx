@@ -46,12 +46,12 @@ export default function ForgotPassword() {
             {loading ? "Sending..." : "Send Reset Link"}
           </Button>
           {resetLink && (
-            <p className="text-sm text-gray-600 text-center">
-              Dev shortcut: <a className="text-primary-600 font-medium" href={resetLink}>Open reset link</a>
+            <p className="text-sm text-slate-300 text-center">
+              Dev shortcut: <a className="text-purple-200 font-medium hover:text-white" href={resetLink}>Open reset link</a>
             </p>
           )}
           <div className="text-center">
-            <Link to="/" className="text-sm text-primary-600 hover:text-primary-700 font-medium">
+            <Link to="/" className="text-sm text-purple-200 hover:text-white font-medium">
               Back to Login
             </Link>
           </div>

@@ -15,7 +15,7 @@ export default function Input({
   return (
     <div className={`w-full ${className}`}>
       {label && (
-        <label className="block text-sm font-medium text-slate-700 mb-1.5 ml-0.5">
+        <label className="block text-sm font-medium text-slate-200 mb-1.5 ml-0.5">
           {label}
         </label>
       )}
@@ -39,9 +39,9 @@ export default function Input({
             py-2.5 
             glass-input
             border 
-            ${error ? 'border-red-300 focus:ring-red-200 focus:border-red-400' : 'border-slate-200 focus:ring-primary-100 focus:border-primary-500'} 
+            ${error ? 'border-red-400 focus:ring-red-300 focus:border-red-400' : 'border-slate-700 focus:ring-purple-300/30 focus:border-purple-300'}
             rounded-lg 
-            text-slate-900 
+            text-slate-100 
             placeholder:text-slate-400 
             text-sm 
             shadow-sm 

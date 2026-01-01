@@ -59,8 +59,8 @@ export default function Login() {
       >
         <form onSubmit={handleSubmit} className="space-y-5">
           {formError && (
-            <div className="p-3 bg-red-50 border border-red-100 text-red-600 rounded-lg text-sm font-medium flex items-center gap-2">
-              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="p-3 bg-rose-500/10 border border-rose-500/40 text-rose-100 rounded-lg text-sm font-medium flex items-center gap-2">
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               {formError}
@@ -93,11 +93,11 @@ export default function Login() {
             <label className="flex items-center gap-2 cursor-pointer group">
               <input
                 type="checkbox"
-                className="w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500 transition-colors"
+                className="w-4 h-4 rounded border-slate-500 text-purple-400 focus:ring-purple-400/40 bg-slate-900/60 transition-colors"
               />
-              <span className="text-sm text-slate-600 group-hover:text-slate-800 transition-colors">Remember me</span>
+              <span className="text-sm text-slate-300 group-hover:text-white transition-colors">Remember me</span>
             </label>
-            <Link to="/forgot-password" className="text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors">
+            <Link to="/forgot-password" className="text-sm font-medium text-purple-200 hover:text-white transition-colors">
               Forgot password?
             </Link>
           </div>
@@ -108,27 +108,27 @@ export default function Login() {
 
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200"></div>
+              <div className="w-full border-t border-white/10"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-slate-500">Or continue with</span>
+              <span className="px-2 bg-slate-900/80 text-slate-300">Or continue with</span>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <button type="button" className="flex items-center justify-center gap-2 px-4 py-2 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+            <button type="button" className="flex items-center justify-center gap-2 px-4 py-2 border border-white/10 rounded-lg hover:bg-white/5 transition-colors text-slate-100">
               <img src={googleIcon} alt="Google" className="w-5 h-5" />
-              <span className="text-sm font-medium text-slate-700">Google</span>
+              <span className="text-sm font-medium">Google</span>
             </button>
-            <button type="button" className="flex items-center justify-center gap-2 px-4 py-2 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+            <button type="button" className="flex items-center justify-center gap-2 px-4 py-2 border border-white/10 rounded-lg hover:bg-white/5 transition-colors text-slate-100">
               <img src={githubIcon} alt="GitHub" className="w-5 h-5" />
-              <span className="text-sm font-medium text-slate-700">GitHub</span>
+              <span className="text-sm font-medium">GitHub</span>
             </button>
           </div>
 
-          <p className="text-center text-sm text-slate-600">
+          <p className="text-center text-sm text-slate-300">
             Don't have an account?{" "}
-            <Link to="/register" className="font-medium text-primary-600 hover:text-primary-700 transition-colors">
+            <Link to="/register" className="font-medium text-purple-200 hover:text-white transition-colors">
               Sign up
             </Link>
           </p>

@@ -2,13 +2,13 @@ import React from "react";
 
 export default function Toast({ message, type = "success", onClose }) {
   const styles = type === "error" 
-    ? "bg-red-50 border-red-200 text-red-800" 
-    : "bg-emerald-50 border-emerald-200 text-emerald-800";
+    ? "bg-rose-500/15 border-rose-400/40 text-rose-50" 
+    : "bg-emerald-500/15 border-emerald-400/40 text-emerald-50";
   
-  const iconColor = type === "error" ? "text-red-500" : "text-emerald-500";
+  const iconColor = type === "error" ? "text-rose-200" : "text-emerald-200";
 
   return (
-    <div className={`fixed top-4 right-4 z-50 p-4 rounded-xl border shadow-lg animate-in fade-in slide-in-from-top-2 duration-300 max-w-sm w-full ${styles}`}>
+    <div className={`fixed top-4 right-4 z-50 p-4 rounded-xl border shadow-lg shadow-slate-950/40 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300 max-w-sm w-full ${styles}`}>
       <div className="flex items-start gap-3">
         {type === "success" ? (
           <svg className={`w-5 h-5 flex-shrink-0 mt-0.5 ${iconColor}`} fill="currentColor" viewBox="0 0 20 20">

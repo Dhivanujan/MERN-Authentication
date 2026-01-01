@@ -16,19 +16,19 @@ export default function Header() {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
+    <header className="sticky top-0 z-30 bg-slate-900/80 backdrop-blur-xl border-b border-white/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           <div className="flex items-center gap-8">
             <Link to="/dashboard" className="flex items-center gap-2.5 group">
-              <div className="h-8 w-8 rounded-lg overflow-hidden shadow-sm border border-slate-200 group-hover:border-primary-200 transition-colors">
+              <div className="h-9 w-9 rounded-lg overflow-hidden shadow-sm border border-white/10 group-hover:border-purple-300/40 transition-colors">
                 <img 
                   src={user?.profilePhoto || defaultAvatar} 
                   alt={user?.username || "User"} 
                   className="w-full h-full object-cover"
                 />
               </div>
-              <span className="text-lg font-bold text-slate-900 tracking-tight">AuthBoard</span>
+              <span className="text-lg font-semibold text-white tracking-tight group-hover:text-purple-200 transition-colors">AuthBoard</span>
             </Link>
             
             <nav className="hidden md:flex items-center gap-1">
@@ -36,8 +36,8 @@ export default function Header() {
                 to="/dashboard" 
                 className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                   isActive('/dashboard') 
-                    ? 'text-primary-700 bg-primary-50' 
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                    ? 'text-white bg-white/10' 
+                    : 'text-slate-300 hover:text-white hover:bg-white/5'
                 }`}
               >
                 Overview
@@ -46,8 +46,8 @@ export default function Header() {
                 to="/profile" 
                 className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                   isActive('/profile') 
-                    ? 'text-primary-700 bg-primary-50' 
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                    ? 'text-white bg-white/10' 
+                    : 'text-slate-300 hover:text-white hover:bg-white/5'
                 }`}
               >
                 Profile
@@ -56,8 +56,8 @@ export default function Header() {
                 to="/settings" 
                 className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                   isActive('/settings') 
-                    ? 'text-primary-700 bg-primary-50' 
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                    ? 'text-white bg-white/10' 
+                    : 'text-slate-300 hover:text-white hover:bg-white/5'
                 }`}
               >
                 Settings
@@ -68,13 +68,13 @@ export default function Header() {
           <div className="flex items-center gap-4">
             {user && (
               <div className="hidden sm:flex flex-col items-end mr-2">
-                <span className="text-sm font-medium text-slate-900">{user.username}</span>
-                <span className="text-xs text-slate-500">{user.email}</span>
+                <span className="text-sm font-semibold text-white">{user.username}</span>
+                <span className="text-xs text-slate-400">{user.email}</span>
               </div>
             )}
             <button
               onClick={handleLogout}
-              className="text-sm font-medium text-slate-600 hover:text-red-600 transition-colors px-3 py-2"
+              className="text-sm font-medium text-slate-300 hover:text-rose-300 transition-colors px-3 py-2"
             >
               Sign out
             </button>

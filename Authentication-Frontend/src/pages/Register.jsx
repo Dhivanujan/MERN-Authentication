@@ -104,8 +104,8 @@ export default function Register() {
       >
         <form onSubmit={handleSubmit} className="space-y-5">
           {formError && (
-            <div className="p-3 bg-red-50 border border-red-100 text-red-600 rounded-lg text-sm font-medium flex items-center gap-2">
-              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="p-3 bg-rose-500/10 border border-rose-500/40 text-rose-100 rounded-lg text-sm font-medium flex items-center gap-2">
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               {formError}
@@ -115,16 +115,16 @@ export default function Register() {
           {/* Profile Photo Upload */}
           <div className="flex justify-center">
             <div className="relative group">
-              <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-slate-100 shadow-sm bg-slate-50 flex items-center justify-center">
+              <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-white/15 shadow-lg shadow-purple-500/20 bg-slate-900/60 flex items-center justify-center">
                 {photoPreview ? (
                   <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
                 ) : (
-                  <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                 )}
               </div>
-              <label className="absolute bottom-0 right-0 bg-white text-slate-600 p-1.5 rounded-full cursor-pointer shadow-md border border-slate-100 hover:text-primary-600 transition-colors">
+              <label className="absolute bottom-0 right-0 bg-white/90 text-slate-800 p-1.5 rounded-full cursor-pointer shadow-md border border-white/40 hover:text-purple-600 transition-colors">
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -183,27 +183,27 @@ export default function Register() {
 
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200"></div>
+              <div className="w-full border-t border-white/10"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-slate-500">Or continue with</span>
+              <span className="px-2 bg-slate-900/80 text-slate-300">Or continue with</span>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <button type="button" className="flex items-center justify-center gap-2 px-4 py-2 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+            <button type="button" className="flex items-center justify-center gap-2 px-4 py-2 border border-white/10 rounded-lg hover:bg-white/5 transition-colors text-slate-100">
               <img src={googleIcon} alt="Google" className="w-5 h-5" />
-              <span className="text-sm font-medium text-slate-700">Google</span>
+              <span className="text-sm font-medium">Google</span>
             </button>
-            <button type="button" className="flex items-center justify-center gap-2 px-4 py-2 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+            <button type="button" className="flex items-center justify-center gap-2 px-4 py-2 border border-white/10 rounded-lg hover:bg-white/5 transition-colors text-slate-100">
               <img src={githubIcon} alt="GitHub" className="w-5 h-5" />
-              <span className="text-sm font-medium text-slate-700">GitHub</span>
+              <span className="text-sm font-medium">GitHub</span>
             </button>
           </div>
 
-          <p className="text-center text-sm text-slate-600">
+          <p className="text-center text-sm text-slate-300">
             Already have an account?{" "}
-            <Link to="/" className="font-medium text-primary-600 hover:text-primary-700 transition-colors">
+            <Link to="/" className="font-medium text-purple-200 hover:text-white transition-colors">
               Sign in
             </Link>
           </p>

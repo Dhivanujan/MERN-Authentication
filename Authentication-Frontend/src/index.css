@@ -1,8 +1,16 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --surface: #0b1224;
+  --surface-soft: #0f172a;
+  --primary: #8b5cf6;
+  --accent: #22d3ee;
+  --muted: #94a3b8;
+}
 
 /* App-level custom styles */
 html, body, #root {
@@ -12,23 +20,29 @@ html, body, #root {
 }
 
 body {
-  @apply bg-slate-50 text-slate-900 antialiased font-sans;
-  background-image: radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
-  background-size: 100% 100%;
+  font-family: 'Space Grotesk', 'Inter', system-ui, -apple-system, sans-serif;
+  color: #e2e8f0;
+  background-color: var(--surface);
+  background-image:
+    radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.25), transparent 25%),
+    radial-gradient(circle at 80% 0%, rgba(34, 211, 238, 0.25), transparent 25%),
+    radial-gradient(1200px at 50% 120%, rgba(15, 23, 42, 0.95), rgba(10, 14, 25, 0.95));
+  background-size: cover;
   background-attachment: fixed;
+  @apply antialiased;
 }
 
 /* Glassmorphism Utilities */
 .glass {
-  @apply bg-white/70 backdrop-blur-lg border border-white/20 shadow-xl;
+  @apply bg-slate-900/70 border border-white/10 backdrop-blur-2xl shadow-[0_20px_80px_rgba(15,23,42,0.45)];
 }
 
 .glass-input {
-  @apply bg-white/50 border-slate-200 focus:border-primary-500 focus:ring-primary-500/20;
+  @apply bg-slate-900/60 border-slate-700 text-slate-100 placeholder:text-slate-400 focus:border-purple-400 focus:ring-purple-400/30;
 }
 
 .btn-primary {
-  @apply bg-primary-600 hover:bg-primary-700 text-white shadow-lg shadow-primary-600/30 transition-all hover:-translate-y-0.5 active:translate-y-0;
+  @apply bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-400 text-white shadow-lg shadow-purple-700/30 transition-all hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0;
 }
 
 * {
