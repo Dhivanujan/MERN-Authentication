@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 
 const refreshTokenSchema = new mongoose.Schema(
   {
+    sessionId: { type: String, required: true },
     tokenHash: { type: String, required: true },
     createdAt: { type: Date, default: Date.now },
     lastUsedAt: { type: Date, default: Date.now },

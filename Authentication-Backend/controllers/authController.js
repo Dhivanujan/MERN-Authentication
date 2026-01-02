@@ -11,11 +11,23 @@ const REFRESH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const MAX_SESSIONS = 5;
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCK_WINDOW_MS = 15 * 60 * 1000;
+const getRefreshSecret = () => {
+  const secret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error("JWT_SECRET or JWT_REFRESH_SECRET must be set for refresh tokens");
+  }
+  return secret;
+};
 
 const normaliseEmail = (value = "") => value.trim().toLowerCase();
 const trimValue = (value = "") => value.trim();
 const hashToken = (token) => crypto.createHash("sha256").update(token).digest("hex");
 const generateRandomToken = (bytes = 64) => crypto.randomBytes(bytes).toString("hex");
+
+const buildRefreshJwt = (userId, sessionId) =>
+  jwt.sign({ sub: userId.toString(), sid: sessionId }, getRefreshSecret(), {
+    expiresIn: `${Math.floor(REFRESH_TTL_MS / 1000)}s`,
+  });
 
 const fingerprintRequest = (req) => {
   const rawIp = (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").toString();
@@ -80,12 +92,14 @@ const clearRefreshCookie = (res) => {
 };
 
 const createRefreshSession = async (user, req) => {
-  const refreshToken = generateRandomToken(64);
+  const sessionId = generateRandomToken(16);
+  const refreshToken = buildRefreshJwt(user._id, sessionId);
   const tokenHash = hashToken(refreshToken);
   const now = Date.now();
   const fp = fingerprintRequest(req);
 
   const entry = {
+    sessionId,
     tokenHash,
     createdAt: new Date(now),
     lastUsedAt: new Date(now),
@@ -329,48 +343,44 @@ export const refresh = asyncHandler(async (req, res) => {
 
   const refreshToken = cookies.refreshToken;
   clearRefreshCookie(res);
-  const tokenHash = hashToken(refreshToken);
 
-  const foundUser = await User.findOne({ "refreshTokens.tokenHash": tokenHash });
-  if (!foundUser) {
-    // Possible reuse. Invalidate any tokens for decoded user.
-    try {
-      const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET);
-      const hackedUser = await User.findById(decoded.id);
-      if (hackedUser) {
-        hackedUser.refreshTokens = [];
-        await hackedUser.save();
-      }
-    } catch (err) {
-      // ignore
-    }
+  let decoded;
+  try {
+    decoded = jwt.verify(refreshToken, getRefreshSecret());
+  } catch (err) {
+    return res.status(403).json({ message: "Invalid or expired refresh token" });
+  }
+
+  const tokenHash = hashToken(refreshToken);
+  const user = await User.findById(decoded.sub);
+
+  if (!user) {
+    return res.status(403).json({ message: "Invalid refresh token" });
+  }
+
+  const matchingToken = (user.refreshTokens || []).find((rt) => rt.tokenHash === tokenHash && rt.sessionId === decoded.sid);
+
+  if (!matchingToken) {
+    // Token reuse or revoked; revoke all sessions defensively
+    user.refreshTokens = [];
+    await user.save();
     return res.status(403).json({ message: "Refresh token reuse detected" });
   }
 
-  const matchingToken = foundUser.refreshTokens.find((rt) => rt.tokenHash === tokenHash);
-  if (!matchingToken || matchingToken.expiresAt < new Date()) {
-    foundUser.refreshTokens = foundUser.refreshTokens.filter((rt) => rt.tokenHash !== tokenHash);
-    await foundUser.save();
+  if (matchingToken.expiresAt < new Date()) {
+    user.refreshTokens = user.refreshTokens.filter((rt) => rt.tokenHash !== tokenHash);
+    await user.save();
     return res.status(403).json({ message: "Refresh token expired" });
   }
 
-  try {
-    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET);
-    if (foundUser._id.toString() !== decoded.id) {
-      return res.sendStatus(403);
-    }
+  const accessToken = generateAccessToken(user);
+  const newRefreshToken = await rotateRefreshSession(user, tokenHash, req);
+  setRefreshCookie(res, newRefreshToken);
 
-    const accessToken = generateAccessToken(foundUser);
-    const newRefreshToken = await rotateRefreshSession(foundUser, tokenHash, req);
-    setRefreshCookie(res, newRefreshToken);
-
-    return res.json({
-      token: accessToken,
-      user: buildUserPayload(foundUser),
-    });
-  } catch (err) {
-    return res.sendStatus(403);
-  }
+  return res.json({
+    token: accessToken,
+    user: buildUserPayload(user),
+  });
 });
 
 // @desc    Logout user (single session)
