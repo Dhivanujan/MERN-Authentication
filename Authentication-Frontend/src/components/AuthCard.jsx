@@ -4,10 +4,11 @@ export default function AuthCard({ children, title, subtitle }) {
   return (
     <div className="relative">
       <div className="relative glass rounded-2xl p-8 fade-in overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-white/5 to-cyan-400/10" aria-hidden="true" />
-        <div className="absolute inset-x-12 -top-24 h-32 bg-gradient-to-r from-purple-400/30 via-cyan-300/20 to-transparent blur-3xl" aria-hidden="true" />
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-400/10 via-white/5 to-cyan-300/10" aria-hidden="true" />
+        <div className="absolute inset-x-8 -top-28 h-32 bg-gradient-to-r from-amber-400/35 via-white/10 to-cyan-300/25 blur-3xl" aria-hidden="true" />
+        <div className="absolute right-6 top-6 h-10 w-10 rounded-full border border-white/10 bg-white/5 backdrop-blur flex items-center justify-center text-xs font-semibold uppercase tracking-[0.2em] text-amber-100">ID</div>
         <div className="relative text-center mb-8">
-          <div className="mx-auto mb-5 flex items-center justify-center h-12 w-12 rounded-xl bg-white/10 border border-white/15 shadow-inner shadow-purple-500/10">
+          <div className="mx-auto mb-5 flex items-center justify-center h-12 w-12 rounded-xl bg-white/10 border border-white/15 shadow-inner shadow-amber-500/15">
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>

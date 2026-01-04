@@ -16,7 +16,7 @@ export default function Header() {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <header className="sticky top-0 z-30 bg-slate-900/80 backdrop-blur-xl border-b border-white/10">
+    <header className="sticky top-0 z-30 bg-slate-950/70 backdrop-blur-xl border-b border-white/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           <div className="flex items-center gap-8">
@@ -34,9 +34,9 @@ export default function Header() {
             <nav className="hidden md:flex items-center gap-1">
               <Link 
                 to="/dashboard" 
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-all ${
                   isActive('/dashboard') 
-                    ? 'text-white bg-white/10' 
+                    ? 'text-white bg-white/10 border border-white/15 shadow-inner shadow-amber-400/10' 
                     : 'text-slate-300 hover:text-white hover:bg-white/5'
                 }`}
               >
@@ -44,9 +44,9 @@ export default function Header() {
               </Link>
               <Link 
                 to="/profile" 
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-all ${
                   isActive('/profile') 
-                    ? 'text-white bg-white/10' 
+                    ? 'text-white bg-white/10 border border-white/15 shadow-inner shadow-amber-400/10' 
                     : 'text-slate-300 hover:text-white hover:bg-white/5'
                 }`}
               >
@@ -54,9 +54,9 @@ export default function Header() {
               </Link>
               <Link 
                 to="/settings" 
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-all ${
                   isActive('/settings') 
-                    ? 'text-white bg-white/10' 
+                    ? 'text-white bg-white/10 border border-white/15 shadow-inner shadow-amber-400/10' 
                     : 'text-slate-300 hover:text-white hover:bg-white/5'
                 }`}
               >

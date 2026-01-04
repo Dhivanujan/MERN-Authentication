@@ -154,8 +154,7 @@ export default function Settings() {
               <div className="grid gap-5">
                 <Input
                   label="Full Name"
-                <div className="pt-4 border-t border-white/10">
-                  <h3 className="text-sm font-medium text-slate-100 mb-4">Change Password</h3>
+                  name="username"
                   value={formData.username}
                   onChange={handleInputChange}
                   placeholder="Your full name"
@@ -170,8 +169,8 @@ export default function Settings() {
                   placeholder="name@company.com"
                 />
 
-                <div className="pt-4 border-t border-slate-100">
-                  <h3 className="text-sm font-medium text-slate-900 mb-4">Change Password</h3>
+                <div className="pt-4 border-t border-white/10">
+                  <h3 className="text-sm font-semibold text-slate-100 mb-2 uppercase tracking-[0.08em]">Change Password</h3>
                   <div className="space-y-1">
                     <Input
                       label="New Password"

@@ -3,13 +3,13 @@ import Header from "./Header";
 
 export default function DashboardLayout({ children }) {
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans relative overflow-hidden">
+    <div className="min-h-screen bg-[var(--surface)] text-slate-100 flex flex-col font-sans relative overflow-hidden">
       <div
-        className="absolute inset-0 opacity-70"
+        className="absolute inset-0 opacity-80"
         aria-hidden="true"
         style={{
           backgroundImage:
-            "radial-gradient(circle at 0% 0%, rgba(56,189,248,0.15), transparent 35%), radial-gradient(circle at 80% 0%, rgba(139,92,246,0.2), transparent 30%), radial-gradient(circle at 50% 120%, rgba(15,23,42,0.9), rgba(10,14,25,1))",
+            "radial-gradient(circle at 8% 14%, rgba(245,158,11,0.14), transparent 32%), radial-gradient(circle at 82% 6%, rgba(34,211,238,0.16), transparent 32%), radial-gradient(circle at 50% 120%, rgba(5,7,18,0.92), rgba(4,6,14,0.98))",
         }}
       />
       <Header />

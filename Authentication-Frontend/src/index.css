@@ -5,11 +5,13 @@
 @tailwind utilities;
 
 :root {
-  --surface: #0b1224;
-  --surface-soft: #0f172a;
-  --primary: #8b5cf6;
+  --surface: #050712;
+  --surface-soft: #0a0f1f;
+  --surface-alt: #0f172a;
+  --primary: #f59e0b;
   --accent: #22d3ee;
   --muted: #94a3b8;
+  --card-border: rgba(255, 255, 255, 0.08);
 }
 
 /* App-level custom styles */
@@ -24,9 +26,9 @@ body {
   color: #e2e8f0;
   background-color: var(--surface);
   background-image:
-    radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.25), transparent 25%),
-    radial-gradient(circle at 80% 0%, rgba(34, 211, 238, 0.25), transparent 25%),
-    radial-gradient(1200px at 50% 120%, rgba(15, 23, 42, 0.95), rgba(10, 14, 25, 0.95));
+    radial-gradient(circle at 20% 20%, rgba(245, 158, 11, 0.18), transparent 28%),
+    radial-gradient(circle at 80% 0%, rgba(34, 211, 238, 0.18), transparent 26%),
+    linear-gradient(145deg, #050712 0%, #060a14 45%, #0b1224 100%);
   background-size: cover;
   background-attachment: fixed;
   @apply antialiased;
@@ -34,15 +36,15 @@ body {
 
 /* Glassmorphism Utilities */
 .glass {
-  @apply bg-slate-900/70 border border-white/10 backdrop-blur-2xl shadow-[0_20px_80px_rgba(15,23,42,0.45)];
+  @apply bg-white/5 border border-[var(--card-border)] backdrop-blur-2xl shadow-[0_20px_80px_rgba(5,7,18,0.55)];
 }
 
 .glass-input {
-  @apply bg-slate-900/60 border-slate-700 text-slate-100 placeholder:text-slate-400 focus:border-purple-400 focus:ring-purple-400/30;
+  @apply bg-slate-900/50 border-slate-800 text-slate-100 placeholder:text-slate-500 focus:border-amber-400 focus:ring-amber-400/30;
 }
 
 .btn-primary {
-  @apply bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-400 text-white shadow-lg shadow-purple-700/30 transition-all hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0;
+  @apply bg-gradient-to-r from-amber-400 via-amber-500 to-cyan-400 text-slate-950 font-semibold shadow-lg shadow-amber-500/30 transition-all hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0;
 }
 
 * {

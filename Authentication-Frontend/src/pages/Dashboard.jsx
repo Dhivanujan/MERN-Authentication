@@ -20,11 +20,11 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
-      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-purple-700 via-indigo-700 to-slate-900 shadow-2xl">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.12),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(255,255,255,0.08),transparent_35%)]" aria-hidden="true" />
+      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-amber-500/80 via-amber-600/60 to-slate-950 shadow-2xl">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_22%_18%,rgba(255,255,255,0.16),transparent_32%),radial-gradient(circle_at_82%_0%,rgba(255,255,255,0.1),transparent_32%)]" aria-hidden="true" />
         <div className="relative p-8 xl:p-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div className="flex items-start gap-5">
-            <div className="h-16 w-16 rounded-2xl overflow-hidden border border-white/20 shadow-lg shadow-purple-500/30 ring-2 ring-white/10 flex-shrink-0">
+            <div className="h-16 w-16 rounded-2xl overflow-hidden border border-white/20 shadow-lg shadow-amber-500/30 ring-2 ring-white/10 flex-shrink-0">
               <img 
                 src={user?.profilePhoto || defaultAvatar} 
                 alt={user?.username} 
@@ -32,7 +32,7 @@ export default function Dashboard() {
               />
             </div>
             <div className="space-y-2">
-              <p className="text-sm text-purple-100/80">Signed in</p>
+              <p className="text-sm text-amber-50/80">Signed in</p>
               <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight">
                 Welcome back, {user?.username?.split(' ')[0] || 'User'} 👋
               </h1>
@@ -64,20 +64,20 @@ export default function Dashboard() {
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <div className="grid md:grid-cols-2 gap-4">
-            <div className="group rounded-2xl border border-white/10 bg-white/5 p-6 shadow-lg hover:shadow-xl hover:border-purple-400/40 transition-all">
-              <div className="h-10 w-10 rounded-xl bg-purple-500/15 text-purple-100 flex items-center justify-center mb-4 group-hover:bg-purple-500/25 transition-colors">
+            <div className="group rounded-2xl border border-white/10 bg-white/5 p-6 shadow-lg hover:shadow-xl hover:border-amber-300/50 transition-all">
+              <div className="h-10 w-10 rounded-xl bg-amber-500/15 text-amber-100 flex items-center justify-center mb-4 group-hover:bg-amber-500/25 transition-colors">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               </div>
               <h3 className="text-lg font-semibold text-white mb-2">Profile</h3>
               <p className="text-sm text-slate-200/90 mb-4">Update your personal information and public details.</p>
-              <Link to="/profile" className="text-sm font-semibold text-purple-100 group-hover:text-white flex items-center gap-1">
+              <Link to="/profile" className="text-sm font-semibold text-amber-100 group-hover:text-white flex items-center gap-1">
                 Manage profile <span className="group-hover:translate-x-0.5 transition-transform">→</span>
               </Link>
             </div>
 
-            <div className="group rounded-2xl border border-white/10 bg-white/5 p-6 shadow-lg hover:shadow-xl hover:border-cyan-300/40 transition-all">
+            <div className="group rounded-2xl border border-white/10 bg-white/5 p-6 shadow-lg hover:shadow-xl hover:border-cyan-300/50 transition-all">
               <div className="h-10 w-10 rounded-xl bg-cyan-500/15 text-cyan-100 flex items-center justify-center mb-4 group-hover:bg-cyan-500/25 transition-colors">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -102,7 +102,7 @@ export default function Dashboard() {
             </div>
             <div className="h-2 rounded-full bg-white/10 overflow-hidden">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-purple-500 via-indigo-500 to-cyan-400"
+                className="h-full rounded-full bg-gradient-to-r from-amber-400 via-amber-500 to-cyan-400"
                 style={{ width: `${profileCompletion}%` }}
               />
             </div>
