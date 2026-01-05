@@ -41,17 +41,22 @@ export default function ForgotPassword() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            icon={
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+              </svg>
+            }
           />
           <Button type="submit" disabled={loading}>
             {loading ? "Sending..." : "Send Reset Link"}
           </Button>
           {resetLink && (
             <p className="text-sm text-slate-300 text-center">
-              Dev shortcut: <a className="text-purple-200 font-medium hover:text-white" href={resetLink}>Open reset link</a>
+              Dev shortcut: <a className="text-amber-400 font-medium hover:text-amber-300" href={resetLink}>Open reset link</a>
             </p>
           )}
           <div className="text-center">
-            <Link to="/" className="text-sm text-purple-200 hover:text-white font-medium">
+            <Link to="/" className="text-sm text-amber-400 hover:text-amber-300 font-medium">
               Back to Login
             </Link>
           </div>

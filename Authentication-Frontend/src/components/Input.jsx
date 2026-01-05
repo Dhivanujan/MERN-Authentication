@@ -9,6 +9,8 @@ export default function Input({
   placeholder, 
   error, 
   icon,
+  rightIcon,
+  onRightIconClick,
   required = false,
   className = ''
 }) {
@@ -35,7 +37,7 @@ export default function Input({
           className={`
             w-full 
             ${icon ? 'pl-10' : 'pl-3'} 
-            pr-3 
+            ${rightIcon ? 'pr-10' : 'pr-3'} 
             py-2.5 
             glass-input
             border 
@@ -51,6 +53,14 @@ export default function Input({
             duration-200
           `}
         />
+        {rightIcon && (
+          <div 
+            className={`absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 ${onRightIconClick ? 'cursor-pointer hover:text-slate-200' : 'pointer-events-none'}`}
+            onClick={onRightIconClick}
+          >
+            {rightIcon}
+          </div>
+        )}
       </div>
       {error && (
         <p className="mt-1.5 text-xs text-red-500 font-medium flex items-center gap-1">

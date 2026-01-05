@@ -21,14 +21,14 @@ export default function Header() {
         <div className="flex justify-between h-16 items-center">
           <div className="flex items-center gap-8">
             <Link to="/dashboard" className="flex items-center gap-2.5 group">
-              <div className="h-9 w-9 rounded-lg overflow-hidden shadow-sm border border-white/10 group-hover:border-purple-300/40 transition-colors">
+              <div className="h-9 w-9 rounded-lg overflow-hidden shadow-sm border border-white/10 group-hover:border-amber-300/40 transition-colors">
                 <img 
                   src={user?.profilePhoto || defaultAvatar} 
                   alt={user?.username || "User"} 
                   className="w-full h-full object-cover"
                 />
               </div>
-              <span className="text-lg font-semibold text-white tracking-tight group-hover:text-purple-200 transition-colors">AuthBoard</span>
+              <span className="text-lg font-semibold text-white tracking-tight group-hover:text-amber-200 transition-colors">AuthBoard</span>
             </Link>
             
             <nav className="hidden md:flex items-center gap-1">
