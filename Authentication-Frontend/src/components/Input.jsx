@@ -8,12 +8,19 @@ export default function Input({
   onChange, 
   placeholder, 
   error, 
+  success,
   icon,
   rightIcon,
   onRightIconClick,
   required = false,
   className = ''
 }) {
+  const displayRightIcon = rightIcon || (success && !onRightIconClick && (
+    <svg className="w-5 h-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+    </svg>
+  ));
+
   return (
     <div className={`w-full ${className}`}>
       {label && (
@@ -37,11 +44,15 @@ export default function Input({
           className={`
             w-full 
             ${icon ? 'pl-10' : 'pl-3'} 
-            ${rightIcon ? 'pr-10' : 'pr-3'} 
+            ${displayRightIcon ? 'pr-10' : 'pr-3'} 
             py-2.5 
             glass-input
             border 
-            ${error ? 'border-rose-400 focus:ring-rose-300/50 focus:border-rose-400' : 'border-slate-800 focus:ring-amber-300/40 focus:border-amber-300'}
+            ${error 
+              ? 'border-rose-400 focus:ring-rose-300/50 focus:border-rose-400' 
+              : success 
+                ? 'border-emerald-400 focus:ring-emerald-400/50 focus:border-emerald-400' 
+                : 'border-slate-800 focus:ring-amber-300/40 focus:border-amber-300'}
             rounded-lg 
             text-slate-100 
             placeholder:text-slate-500 
@@ -53,17 +64,17 @@ export default function Input({
             duration-200
           `}
         />
-        {rightIcon && (
+        {displayRightIcon && (
           <div 
             className={`absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 ${onRightIconClick ? 'cursor-pointer hover:text-slate-200' : 'pointer-events-none'}`}
             onClick={onRightIconClick}
           >
-            {rightIcon}
+            {displayRightIcon}
           </div>
         )}
       </div>
       {error && (
-        <p className="mt-1.5 text-xs text-red-500 font-medium flex items-center gap-1">
+        <p className="mt-1.5 text-xs text-rose-400 font-medium flex items-center gap-1 animate-pulse">
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M6 11C8.76142 11 11 8.76142 11 6C11 3.23858 8.76142 1 6 1C3.23858 1 1 3.23858 1 6C1 8.76142 3.23858 11 6 11Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"/>
             <path d="M6 3.5V6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"/>

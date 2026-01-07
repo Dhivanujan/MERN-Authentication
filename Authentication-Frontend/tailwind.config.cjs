@@ -9,6 +9,7 @@ module.exports = {
     extend: {
       fontFamily: {
         sans: ['Inter', ...defaultTheme.fontFamily.sans],
+        display: ['Space Grotesk', ...defaultTheme.fontFamily.sans],
       },
       colors: {
         primary: {

@@ -33,15 +33,15 @@ export default function PasswordStrength({ password }) {
         {[1, 2, 3, 4, 5].map((level) => (
           <div
             key={level}
-            className={`h-1 flex-1 rounded-full transition-all ${
-              level <= strength ? color : "bg-slate-200"
+            className={`h-1 flex-1 rounded-full transition-all duration-300 ${
+              level <= strength ? color : "bg-slate-800"
             }`}
           />
         ))}
       </div>
       {label && (
-        <p className="text-[10px] text-slate-500 font-medium">
-          Password strength: <span className={color.replace("bg-", "text-")}>{label}</span>
+        <p className="text-xs text-slate-400 font-medium tracking-wide">
+          Password strength: <span className={`${color.replace("bg-", "text-")} ml-1`}>{label}</span>
         </p>
       )}
     </div>
