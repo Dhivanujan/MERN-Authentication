@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+import React from "react";
 
 export default function PasswordStrength({ password }) {
   const calculateStrength = () => {
     if (!password) return { strength: 0, label: "", color: "" };
     
     let strength = 0;
-    if (password.length >= 6) strength++;
+    if (password.length >= 8) strength++;
     if (password.length >= 10) strength++;
     if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
     if (/\d/.test(password)) strength++;

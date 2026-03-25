@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import speakeasy from "speakeasy";
+import { OAuth2Client } from "google-auth-library";
 import User from "../models/User.js";
 import asyncHandler from "../middleware/asyncHandler.js";
 
@@ -11,6 +12,7 @@ const REFRESH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const MAX_SESSIONS = 5;
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCK_WINDOW_MS = 15 * 60 * 1000;
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const getRefreshSecret = () => {
   const secret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
   if (!secret) {
@@ -175,6 +177,59 @@ const verifyTotp = (secret, token) =>
 const generateBackupCodes = () =>
   Array.from({ length: 8 }).map(() => generateRandomToken(5));
 
+const generateUniqueUsername = async (email) => {
+  const base = (email.split("@")[0] || "user")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "")
+    .slice(0, 18) || "user";
+
+  let attempt = 0;
+  while (attempt < 20) {
+    const suffix = attempt === 0 ? "" : `${generateRandomToken(2).slice(0, 4)}`;
+    const candidate = `${base}${suffix}`;
+    const exists = await User.exists({ username: candidate });
+    if (!exists) return candidate;
+    attempt += 1;
+  }
+
+  return `${base}${Date.now().toString().slice(-6)}`;
+};
+
+const issueLoginResponse = async (user, req, res) => {
+  const fp = fingerprintRequest(req);
+  const anomaly = isAnomaly(user, fp);
+
+  if (anomaly && !user.mfaEnabled) {
+    const magicToken = createMagicLink(user);
+    await user.save();
+    const frontendUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL?.split(",")[0] || "http://localhost:5173";
+    const magicUrl = `${frontendUrl.replace(/\/$/, "")}/magic-login/${magicToken}`;
+    console.log(`Magic link (anomaly): ${magicUrl}`);
+    return res.status(401).json({
+      message: "New device/location detected. Use the magic link sent to your email.",
+      requiresMagicLink: true,
+      magicUrl,
+    });
+  }
+
+  const accessToken = generateAccessToken(user);
+  const refreshToken = await createRefreshSession(user, req);
+
+  user.lastLogin = new Date();
+  user.lastIp = fp.ip;
+  user.lastUserAgent = fp.userAgent;
+  user.lastCountry = fp.country;
+  await user.save();
+
+  setRefreshCookie(res, refreshToken);
+
+  return res.json({
+    user: buildUserPayload(user),
+    token: accessToken,
+    anomalyDetected: anomaly,
+  });
+};
+
 // @desc    Register a new user
 // @route   POST /api/auth/register
 // @access  Public
@@ -300,38 +355,68 @@ export const login = asyncHandler(async (req, res) => {
     }
   }
 
-  const fp = fingerprintRequest(req);
-  const anomaly = isAnomaly(user, fp);
+  return issueLoginResponse(user, req, res);
+});
 
-  if (anomaly && !user.mfaEnabled) {
-    const magicToken = createMagicLink(user);
-    await user.save();
-    const frontendUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL?.split(",")[0] || "http://localhost:5173";
-    const magicUrl = `${frontendUrl.replace(/\/$/, "")}/magic-login/${magicToken}`;
-    console.log(`Magic link (anomaly): ${magicUrl}`);
-    return res.status(401).json({
-      message: "New device/location detected. Use the magic link sent to your email.",
-      requiresMagicLink: true,
-      magicUrl,
-    });
+// @desc    Login/register with Google
+// @route   POST /api/auth/google
+// @access  Public
+export const googleLogin = asyncHandler(async (req, res) => {
+  const credential = req.body.credential?.toString();
+
+  if (!process.env.GOOGLE_CLIENT_ID) {
+    return res.status(500).json({ message: "GOOGLE_CLIENT_ID is not configured on server" });
   }
 
-  const accessToken = generateAccessToken(user);
-  const refreshToken = await createRefreshSession(user, req);
+  if (!credential) {
+    return res.status(400).json({ message: "Google credential token is required" });
+  }
 
-  user.lastLogin = new Date();
-  user.lastIp = fp.ip;
-  user.lastUserAgent = fp.userAgent;
-  user.lastCountry = fp.country;
-  await user.save();
+  let payload;
+  try {
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    payload = ticket.getPayload();
+  } catch (error) {
+    return res.status(401).json({ message: "Invalid Google token" });
+  }
 
-  setRefreshCookie(res, refreshToken);
+  const email = normaliseEmail(payload?.email || "");
+  const name = trimValue(payload?.name || "");
+  const picture = payload?.picture || "https://api.dicebear.com/9.x/initials/svg?seed=User";
 
-  return res.json({
-    user: buildUserPayload(user),
-    token: accessToken,
-    anomalyDetected: anomaly,
-  });
+  if (!email) {
+    return res.status(400).json({ message: "Google account email is required" });
+  }
+
+  let user = await User.findOne({ email });
+
+  if (!user) {
+    const username = await generateUniqueUsername(email);
+    const generatedPassword = await bcrypt.hash(generateRandomToken(24), 10);
+
+    try {
+      user = await User.create({
+        username: name || username,
+        email,
+        password: generatedPassword,
+        profilePhoto: picture,
+        isEmailVerified: true,
+      });
+    } catch (error) {
+      return handleDuplicateKey(error, res);
+    }
+  } else {
+    if (!user.profilePhoto && picture) {
+      user.profilePhoto = picture;
+    }
+    user.isEmailVerified = true;
+    await user.save();
+  }
+
+  return issueLoginResponse(user, req, res);
 });
 
 // @desc    Refresh Access Token (rotating, hashed, reuse detection)

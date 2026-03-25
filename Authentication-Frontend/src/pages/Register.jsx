@@ -8,8 +8,7 @@ import { fileToBase64 } from "../utils/file";
 import AuthCard from "../components/AuthCard";
 import Input from "../components/Input";
 import Button from "../components/Button";
-import googleIcon from "../assets/google.svg";
-import githubIcon from "../assets/github.svg";
+import { FaCircleExclamation, FaGithub, FaGoogle } from "react-icons/fa6";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -47,7 +46,7 @@ export default function Register() {
         const base64 = await fileToBase64(file);
         setPhotoPreview(base64);
         setFormData((prev) => ({ ...prev, profilePhoto: base64 }));
-      } catch (err) {
+      } catch {
         showError("Failed to process image");
       }
     }
@@ -77,15 +76,15 @@ export default function Register() {
         return;
       }
 
-      if (formData.password.length < 6) {
-        setFormError("Password must be at least 6 characters");
+      if (formData.password.length < 8) {
+        setFormError("Password must be at least 8 characters");
         setLoading(false);
         return;
       }
 
       await register(formData.username, formData.email, formData.password, formData.profilePhoto);
-      showSuccess("Account created! Redirecting you now...");
-      setTimeout(() => navigate("/dashboard"), 600);
+      showSuccess("Account created. Please sign in.");
+      setTimeout(() => navigate("/"), 700);
     } catch (err) {
       setFormError(err.message || "Registration failed. Please try again.");
       showError(err.message || "Registration failed. Please try again.");
@@ -107,9 +106,7 @@ export default function Register() {
         <form onSubmit={handleSubmit} className="space-y-5">
           {formError && (
             <div className="p-3 bg-rose-500/10 border border-rose-500/40 text-rose-100 rounded-lg text-sm font-medium flex items-center gap-2">
-              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+              <FaCircleExclamation className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
               {formError}
             </div>
           )}
@@ -241,11 +238,11 @@ export default function Register() {
 
           <div className="grid grid-cols-2 gap-3">
             <button type="button" className="flex items-center justify-center gap-2 px-4 py-2 border border-white/10 rounded-lg hover:bg-white/5 transition-colors text-slate-100">
-              <img src={googleIcon} alt="Google" className="w-5 h-5" />
+              <FaGoogle className="w-5 h-5" aria-hidden="true" />
               <span className="text-sm font-medium">Google</span>
             </button>
             <button type="button" className="flex items-center justify-center gap-2 px-4 py-2 border border-white/10 rounded-lg hover:bg-white/5 transition-colors text-slate-100">
-              <img src={githubIcon} alt="GitHub" className="w-5 h-5" />
+              <FaGithub className="w-5 h-5" aria-hidden="true" />
               <span className="text-sm font-medium">GitHub</span>
             </button>
           </div>

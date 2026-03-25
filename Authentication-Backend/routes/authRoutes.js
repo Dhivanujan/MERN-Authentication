@@ -4,6 +4,7 @@ import rateLimit from 'express-rate-limit';
 import {
 	register,
 	login,
+	googleLogin,
 	refresh,
 	logout,
 	updateProfilePhoto,
@@ -34,6 +35,7 @@ const forgotPasswordLimiter = rateLimit({
 
 router.post('/register', register);
 router.post('/login', login);
+router.post('/google', googleLogin);
 router.post('/refresh', refresh);
 router.post('/logout', logout);
 router.post('/forgot-password', forgotPasswordLimiter, forgotPassword);

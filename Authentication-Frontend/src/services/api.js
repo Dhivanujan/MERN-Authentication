@@ -49,7 +49,13 @@ api.interceptors.response.use(
     };
     
     // Prevent infinite loop
-    if (isAuthError && !originalRequest._retry && originalRequest.url !== '/auth/refresh' && originalRequest.url !== '/auth/login') {
+    if (
+      isAuthError &&
+      !originalRequest._retry &&
+      originalRequest.url !== '/auth/refresh' &&
+      originalRequest.url !== '/auth/login' &&
+      originalRequest.url !== '/auth/google'
+    ) {
       originalRequest._retry = true;
       
       try {
@@ -78,6 +84,7 @@ api.interceptors.response.use(
 export const authAPI = {
   register: (userData) => api.post('/auth/register', userData),
   login: (credentials) => api.post('/auth/login', credentials),
+  googleLogin: (credential) => api.post('/auth/google', { credential }),
   logout: () => api.post('/auth/logout'),
   refresh: () => api.post('/auth/refresh'),
   getMe: () => api.get('/auth/me'),

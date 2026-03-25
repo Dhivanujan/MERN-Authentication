@@ -1,5 +1,5 @@
 // src/pages/Login.jsx
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Toast from "../components/Toast";
@@ -7,17 +7,103 @@ import useToast from "../hooks/useToast";
 import AuthCard from "../components/AuthCard";
 import Input from "../components/Input";
 import Button from "../components/Button";
-import googleIcon from "../assets/google.svg";
-import githubIcon from "../assets/github.svg";
+import {
+  FaAt,
+  FaCircleExclamation,
+  FaEye,
+  FaEyeSlash,
+  FaGithub,
+  FaGoogle,
+  FaLock,
+} from "react-icons/fa6";
+
+const GOOGLE_SCRIPT = "https://accounts.google.com/gsi/client";
+
+const loadGoogleScript = () =>
+  new Promise((resolve, reject) => {
+    const existing = document.querySelector(`script[src="${GOOGLE_SCRIPT}"]`);
+    if (existing) {
+      resolve();
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = GOOGLE_SCRIPT;
+    script.async = true;
+    script.defer = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("Failed to load Google sign-in script"));
+    document.head.appendChild(script);
+  });
 
 export default function Login() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleEnabled, setGoogleEnabled] = useState(false);
   const [formError, setFormError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const { toast, showSuccess, showError, hideToast } = useToast();
+  const googleButtonRef = useRef(null);
+
+  useEffect(() => {
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      setGoogleEnabled(false);
+      return;
+    }
+
+    let active = true;
+    loadGoogleScript()
+      .then(() => {
+        if (!active || !window.google?.accounts?.id || !googleButtonRef.current) {
+          return;
+        }
+
+        window.google.accounts.id.initialize({
+          client_id: clientId,
+          callback: async (response) => {
+            if (!response?.credential) {
+              showError("Google sign-in did not return a credential");
+              return;
+            }
+
+            setGoogleLoading(true);
+            try {
+              await loginWithGoogle(response.credential);
+              showSuccess("Signed in with Google. Redirecting...");
+              setTimeout(() => navigate("/dashboard"), 600);
+            } catch (error) {
+              showError(error.message || "Google login failed");
+            } finally {
+              setGoogleLoading(false);
+            }
+          },
+        });
+
+        googleButtonRef.current.innerHTML = "";
+        window.google.accounts.id.renderButton(googleButtonRef.current, {
+          type: "standard",
+          theme: "outline",
+          size: "large",
+          text: "continue_with",
+          shape: "pill",
+          width: 320,
+        });
+
+        setGoogleEnabled(true);
+      })
+      .catch(() => {
+        if (!active) return;
+        setGoogleEnabled(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [loginWithGoogle, navigate, showError, showSuccess]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -61,9 +147,7 @@ export default function Login() {
         <form onSubmit={handleSubmit} className="space-y-5">
           {formError && (
             <div className="p-3 bg-rose-500/10 border border-rose-500/40 text-rose-100 rounded-lg text-sm font-medium flex items-center gap-2">
-              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+              <FaCircleExclamation className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
               {formError}
             </div>
           )}
@@ -77,9 +161,7 @@ export default function Login() {
             onChange={handleChange}
             required
             icon={
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
-              </svg>
+              <FaAt className="w-5 h-5" aria-hidden="true" />
             }
           />
 
@@ -93,20 +175,13 @@ export default function Login() {
               onChange={handleChange}
               required
               icon={
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
+                <FaLock className="w-5 h-5" aria-hidden="true" />
               }
               rightIcon={
                 showPassword ? (
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                  </svg>
+                  <FaEyeSlash className="w-5 h-5" aria-hidden="true" />
                 ) : (
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
+                  <FaEye className="w-5 h-5" aria-hidden="true" />
                 )
               }
               onRightIconClick={() => setShowPassword(!showPassword)}
@@ -139,16 +214,30 @@ export default function Login() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 items-start">
+            <div className="rounded-lg border border-white/10 bg-white/95 px-2 py-2 min-h-[44px]">
+              {googleEnabled ? (
+                <div ref={googleButtonRef} />
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-slate-500"
+                >
+                  <FaGoogle />
+                  <span>Google unavailable</span>
+                </button>
+              )}
+            </div>
             <button type="button" className="flex items-center justify-center gap-2 px-4 py-2 border border-white/10 rounded-lg hover:bg-white/5 hover:border-white/20 transition-all duration-200 text-slate-100 group">
-              <img src={googleIcon} alt="Google" className="w-5 h-5 opacity-80 group-hover:opacity-100 transition-opacity" />
-              <span className="text-sm font-medium">Google</span>
-            </button>
-            <button type="button" className="flex items-center justify-center gap-2 px-4 py-2 border border-white/10 rounded-lg hover:bg-white/5 hover:border-white/20 transition-all duration-200 text-slate-100 group">
-              <img src={githubIcon} alt="GitHub" className="w-5 h-5 opacity-80 group-hover:opacity-100 transition-opacity" />
+              <FaGithub className="w-5 h-5 opacity-80 group-hover:opacity-100 transition-opacity" aria-hidden="true" />
               <span className="text-sm font-medium">GitHub</span>
             </button>
           </div>
+
+          {googleLoading && (
+            <p className="text-xs text-center text-slate-300">Completing Google sign in...</p>
+          )}
 
           <p className="text-center text-sm text-slate-300">
             Don't have an account?{" "}

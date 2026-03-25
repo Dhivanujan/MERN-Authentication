@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { authAPI, setAccessToken, setAuthFailureHandler } from '../services/api';
 
@@ -27,7 +28,7 @@ export const AuthProvider = ({ children }) => {
           const userResponse = await authAPI.getMe();
           setUser(userResponse.data.user);
         }
-      } catch (err) {
+      } catch {
         // Not authenticated or refresh failed
         setUser(null);
         setToken(null);
@@ -44,7 +45,7 @@ export const AuthProvider = ({ children }) => {
     const handleAuthFailure = async () => {
       try {
         await authAPI.logout();
-      } catch (err) {
+      } catch {
         // Ignore logout errors during forced sign-out
       }
 
@@ -65,11 +66,6 @@ export const AuthProvider = ({ children }) => {
     try {
       setError(null);
       const response = await authAPI.register({ username, email, password, profilePhoto });
-      const { token: newToken, user: userData } = response.data;
-
-      setAccessToken(newToken);
-      setToken(newToken);
-      setUser(userData);
 
       return response.data;
     } catch (err) {
@@ -92,6 +88,24 @@ export const AuthProvider = ({ children }) => {
       return response.data;
     } catch (err) {
       const message = err.response?.data?.message || 'Login failed';
+      setError(message);
+      throw new Error(message);
+    }
+  };
+
+  const loginWithGoogle = async (credential) => {
+    try {
+      setError(null);
+      const response = await authAPI.googleLogin(credential);
+      const { token: newToken, user: userData } = response.data;
+
+      setAccessToken(newToken);
+      setToken(newToken);
+      setUser(userData);
+
+      return response.data;
+    } catch (err) {
+      const message = err.response?.data?.message || 'Google login failed';
       setError(message);
       throw new Error(message);
     }
@@ -152,6 +166,7 @@ export const AuthProvider = ({ children }) => {
     error,
     register,
     login,
+    loginWithGoogle,
     logout,
     updateProfilePhoto,
     updateAccount,
