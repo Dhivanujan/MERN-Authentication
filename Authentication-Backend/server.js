@@ -16,7 +16,7 @@ validateEnv();
 const app = express();
 
 // Security hardening
-const allowedOrigins = (process.env.CLIENT_URL || "")
+const allowedOrigins = (process.env.CLIENT_URL || process.env.FRONTEND_URL || (process.env.NODE_ENV !== "production" ? "http://localhost:5173" : ""))
 	.split(",")
 	.map((origin) => origin.trim())
 	.filter(Boolean);

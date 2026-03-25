@@ -1,4 +1,4 @@
-const REQUIRED_KEYS = ["MONGO_URI", "JWT_SECRET", "CLIENT_URL"];
+const REQUIRED_KEYS = ["MONGO_URI", "JWT_SECRET"];
 
 const isNonEmpty = (value) => typeof value === "string" && value.trim().length > 0;
 
@@ -35,9 +35,16 @@ export const validateEnv = () => {
     throw new Error("JWT_REFRESH_SECRET must be at least 32 characters when provided");
   }
 
-  const origins = parseOrigins(process.env.CLIENT_URL || "");
-  if (!origins.length || !origins.every(isValidUrl)) {
-    throw new Error("CLIENT_URL must contain at least one valid http/https origin");
+  const configuredOrigins = parseOrigins(process.env.CLIENT_URL || process.env.FRONTEND_URL || "");
+  const defaultDevOrigin = "http://localhost:5173";
+  const origins = configuredOrigins.length ? configuredOrigins : [defaultDevOrigin];
+
+  if (!origins.every(isValidUrl)) {
+    throw new Error("CLIENT_URL or FRONTEND_URL must contain valid http/https origins");
+  }
+
+  if (!configuredOrigins.length && process.env.NODE_ENV === "production") {
+    throw new Error("CLIENT_URL or FRONTEND_URL is required in production");
   }
 
   if (process.env.FRONTEND_URL && !isValidUrl(process.env.FRONTEND_URL)) {

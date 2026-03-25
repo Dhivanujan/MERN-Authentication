@@ -9,7 +9,7 @@ const connectDB = async () => {
 
     await mongoose.connect(process.env.MONGO_URI);
 
-    console.log("✅ MongoDB Atlas Connected Successfully!");
+    console.log("✅ MongoDB Connected Successfully!");
 
     // Clean up old indexes
     try {
