@@ -43,6 +43,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleEnabled, setGoogleEnabled] = useState(false);
+  const [googleMessage, setGoogleMessage] = useState("Loading Google sign in...");
   const [formError, setFormError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const { toast, showSuccess, showError, hideToast } = useToast();
@@ -52,6 +53,7 @@ export default function Login() {
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
     if (!clientId) {
       setGoogleEnabled(false);
+      setGoogleMessage("Set VITE_GOOGLE_CLIENT_ID in frontend .env");
       return;
     }
 
@@ -59,6 +61,10 @@ export default function Login() {
     loadGoogleScript()
       .then(() => {
         if (!active || !window.google?.accounts?.id || !googleButtonRef.current) {
+          if (active) {
+            setGoogleEnabled(false);
+            setGoogleMessage("Google sign in is unavailable right now");
+          }
           return;
         }
 
@@ -94,10 +100,12 @@ export default function Login() {
         });
 
         setGoogleEnabled(true);
+        setGoogleMessage("");
       })
       .catch(() => {
         if (!active) return;
         setGoogleEnabled(false);
+        setGoogleMessage("Failed to load Google script");
       });
 
     return () => {
@@ -216,16 +224,15 @@ export default function Login() {
 
           <div className="grid grid-cols-2 gap-3 items-start">
             <div className="rounded-lg border border-white/10 bg-white/95 px-2 py-2 min-h-[44px]">
-              {googleEnabled ? (
-                <div ref={googleButtonRef} />
-              ) : (
+              <div ref={googleButtonRef} className={googleEnabled ? "" : "hidden"} />
+              {!googleEnabled && (
                 <button
                   type="button"
                   disabled
                   className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-slate-500"
                 >
                   <FaGoogle />
-                  <span>Google unavailable</span>
+                  <span>{googleMessage || "Google unavailable"}</span>
                 </button>
               )}
             </div>
